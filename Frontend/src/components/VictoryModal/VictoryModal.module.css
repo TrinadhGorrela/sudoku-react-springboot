@@ -1,0 +1,219 @@
+/* VictoryModal.module.css */
+
+/* Override the default Bootstrap modal-content style */
+.victoryModal :global(.modal-content) {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.bgGradientSuccess {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.victoryHeader {
+  text-align: center;
+}
+
+.gradeBadge {
+  display: inline-block;
+  padding: 10px 30px;
+  border-radius: 50px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Stars Display */
+.starsDisplay {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.star {
+  display: inline-block;
+  margin: 0 5px;
+  transition: all 0.3s ease;
+}
+
+.filled {
+  color: #ffd700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  animation: starPulse 1s ease-in-out infinite;
+}
+
+.empty {
+  color: #ddd;
+}
+
+@keyframes starPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* Score Display */
+.scoreContainer {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 15px;
+}
+
+.totalScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.scoreLabel {
+  font-size: 0.9rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.scoreValue {
+  font-size: 3.5rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 10px 0;
+}
+
+.rankName {
+  font-size: 1.2rem;
+  color: #764ba2;
+  font-weight: 600;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.statCard {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.statCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statIcon {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Score Breakdown */
+.scoreBreakdown {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.breakdownItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.breakdownItem:last-child {
+  border-bottom: none;
+}
+
+/* Leaderboard */
+.leaderboardContainer {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.leaderboardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.userRankBadge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.leaderboardTable :global(table) {
+  font-size: 0.9rem;
+}
+
+.currentUser {
+  background-color: #e3f2fd !important;
+  font-weight: bold;
+}
+
+.rankBadge {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.medal {
+  font-size: 1.5rem;
+}
+
+.starSmall {
+  font-size: 0.9rem;
+}
+
+/* Signup Prompt */
+.signupPrompt {
+  border: 2px dashed #667eea;
+}
+
+.signupPrompt :global(ul) {
+  padding-left: 20px;
+  margin-bottom: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scoreValue {
+    font-size: 2.5rem;
+  }
+
+  .starsDisplay {
+    font-size: 2rem;
+  }
+}

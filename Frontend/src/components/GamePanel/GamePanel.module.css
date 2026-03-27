@@ -1,0 +1,235 @@
+.gamePanel {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  background-color: white;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  border-radius: 8px;
+}
+
+/* --- Header Row --- */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  color: #6e7c8c;
+}
+
+.statGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.mistakesValue {
+  font-size: 16px;
+  color: #325aaf;
+}
+
+.timeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.timerDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeValue {
+  font-size: 16px;
+  color: #6e7c8c;
+}
+
+.timerToggleBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #e2ebf3;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  color: #6e7c8c;
+}
+
+/* --- Tools Row --- */
+.toolsRow {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 25px;
+}
+
+.toolBtn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #e2ebf3;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #325aaf;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.toolBtn:hover {
+  background-color: #d0e1f0;
+}
+
+.toolBtn.active {
+  background-color: #2a5298;
+  color: white;
+}
+
+.toolBtn.active svg {
+  fill: white;
+}
+
+/* --- Hint Card (Between Header and Tools) --- */
+.hintCard {
+  margin: 0 0 16px 0;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+.hintCard :global(.card-body) {
+  padding: 12px 16px;
+}
+
+.hintCardContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hintIcon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.hintMessage {
+  flex: 1;
+}
+
+.hintTitle {
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.hintExplanation {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 14px;
+  margin-bottom: 0;
+}
+
+.hintStrategy {
+  display: inline-block;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  margin-left: 6px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.okHintBtn {
+  background: white;
+  color: #667eea;
+  border: none;
+  font-weight: 600;
+  padding: 6px 20px;
+  border-radius: 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.okHintBtn:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #5a67d8;
+  transform: scale(1.05);
+}
+
+.hintBtn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+/* --- Number Pad --- */
+.numpadGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.numBtn {
+  height: 60px;
+  font-size: 32px;
+  font-weight: 400;
+  color: #325aaf;
+  background-color: #e2ebf3;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.numBtn:hover {
+  background-color: #d0e1f0;
+}
+
+.hintNumber {
+  background: linear-gradient(135deg, #667eea 20%, #764ba2 100%);
+  color: white !important;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* --- Footer --- */
+.newGameBtn {
+  width: 100%;
+  padding: 15px;
+  background-color: #4a6fa5;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(74, 111, 165, 0.3);
+  transition: background-color 0.2s;
+}
+
+.newGameBtn:hover {
+  background-color: #3a5a95;
+}
+
+/* --- Animations --- */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

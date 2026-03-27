@@ -1,0 +1,314 @@
+.container {
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  border-radius: 8px;
+}
+
+/* PAUSED STATE - Sudoku.com style - shows empty grid with NO numbers, NO highlights, NO colors */
+.paused .input,
+.paused .userValue,
+.paused .prefilled,
+.paused .input.userValue,
+.paused .input.error,
+.paused .error {
+  color: transparent !important; /* Hide ALL numbers */
+}
+
+.paused .notesGrid {
+  opacity: 0 !important; /* Hide all notes */
+}
+
+/* Remove ALL background colors when paused */
+.paused .cell,
+.paused .selectedCell,
+.paused .relatedCell,
+.paused .error,
+.paused .input.selectedCell,
+.paused .input.relatedCell,
+.paused .input.error,
+.paused .input.error.selectedCell,
+.paused .cell.selectedCell,
+.paused .cell.relatedCell,
+.paused .cell.error {
+  background-color: #ffffff !important; /* Clean white background for ALL cells */
+}
+
+/* Keep ONLY the grid borders */
+.paused .cell {
+  border: 1px solid #e0e0e0 !important; /* Light gray borders */
+  background-color: #ffffff !important;
+}
+
+/* Keep 3x3 box borders visible */
+.paused .cell:nth-child(3),
+.paused .cell:nth-child(6),
+.paused .cell:nth-child(9) {
+  border-right: 3px solid #aaa !important; /* Medium gray for 3x3 borders */
+}
+
+.paused .cell:nth-child(1) {
+  border-left: 3px solid #aaa !important;
+}
+
+.paused .table tr:nth-child(3) .cell,
+.paused .table tr:nth-child(6) .cell,
+.paused .table tr:nth-child(9) .cell {
+  border-bottom: 3px solid #aaa !important;
+}
+
+.paused .table tr:nth-child(1) .cell {
+  border-top: 3px solid #aaa !important;
+}
+
+/* Normal state styles */
+.table {
+  border-collapse: collapse;
+}
+
+.cell {
+  border: 1px solid #999;
+  padding: 0;
+  position: relative;
+  background-color: #fff;
+}
+
+.cell:nth-child(3),
+.cell:nth-child(6),
+.cell:nth-child(9) {
+  border-right: 3px solid #333;
+}
+
+.cell:nth-child(1) {
+  border-left: 3px solid black;
+}
+
+.table tr:nth-child(3) .cell,
+.table tr:nth-child(6) .cell,
+.table tr:nth-child(9) .cell {
+  border-bottom: 3px solid #333;
+}
+
+.table tr:nth-child(1) .cell {
+  border-top: 3px solid #333;
+}
+
+.input {
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  font-size: 23px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  color: black;
+  cursor: default;
+  z-index: 2;
+  position: relative;
+}
+
+.userValue {
+  color: rgb(125, 125, 192);
+  font-weight: 600;
+}
+
+.selectedCell {
+  background: #78b1eb;
+}
+
+.relatedCell {
+  background: #e6f0ff;
+}
+
+.error {
+  color: #d32f2f;
+  background-color: #ffebee;
+}
+
+.input:focus {
+  background: #78b1eb !important;
+  caret-color: transparent;
+}
+
+.input.error {
+  color: #d32f2f !important;
+  background-color: #ffebee !important;
+  font-weight: 700 !important;
+}
+
+.input.error.selectedCell {
+  background-color: #ffcdd2 !important;
+}
+
+.input.error:focus {
+  background-color: #ffcdd2 !important;
+}
+
+.input.userValue.error {
+  color: #d32f2f !important;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  background-color: transparent;
+}
+
+.playButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative;
+  z-index: 30;
+}
+
+.playButton:hover {
+  transform: scale(1.1);
+}
+
+.playButton svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.cellContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.notesGrid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.noteNumber {
+  font-size: 10px;
+  color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.noteNumber:empty {
+  color: transparent;
+}
+
+.input.hasValue ~ .notesGrid {
+  display: none !important;
+}
+
+/* Make notes more visible in selected cells */
+.selectedCell .notesGrid .noteNumber:not(:empty) {
+  color: #1e3a5f;
+  font-weight: 700;
+}
+
+/* Make notes visible in related cells */
+.relatedCell .notesGrid .noteNumber:not(:empty) {
+  color: #4169e1;
+}
+
+/* Add to Grid.module.css */
+
+/* Hint cell styling */
+.cell.highlighted {
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    rgba(102, 126, 234, 0.15),
+    rgba(118, 75, 162, 0.15)
+  );
+  border-radius: 8px;
+}
+
+.cell.hintCell {
+  position: relative;
+  animation: pulseHighlight 2s infinite;
+}
+
+.cell.hintCell .input.hintHighlighted {
+  border: 2px solid #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(
+    145deg,
+    rgba(102, 126, 234, 0.1),
+    rgba(118, 75, 162, 0.1)
+  );
+}
+
+.sparkleIcon {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 14px;
+  animation: sparkle 1s infinite;
+  z-index: 2;
+}
+
+@keyframes pulseHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}
+
+/* Ensure the cell content is positioned relatively for absolute positioning */
+.cellContent {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Adjust input styling for better hint visibility */
+.input.hintHighlighted {
+  transition: all 0.3s ease;
+}
+
+/* Make sure the hint styling doesn't conflict with other states */
+.input.hintHighlighted.selectedCell {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+}
+
+.input.hintHighlighted.error {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+}
