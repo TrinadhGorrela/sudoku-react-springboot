@@ -5,7 +5,7 @@ import com.sudoku.util.SmartHintGenerator;
 import com.sudoku.util.SmartHintGenerator.HintInfo;
 
 public interface GameService {
-    GameState createGame(Long userId, String difficulty);
+    GameState createGame(String difficulty);
     GameState makeMove(String gameId, int row, int col, int value);
     GameState undoMove(String gameId);
     SmartHintGenerator.HintInfo getHint(String gameId);

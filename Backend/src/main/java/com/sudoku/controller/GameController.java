@@ -13,10 +13,8 @@ import com.sudoku.dto.response.HintResponse;
 import com.sudoku.dto.request.MoveRequest;
 import com.sudoku.dto.request.NotesUpdateRequest;
 import com.sudoku.dto.response.ValidationResponse;
-import com.sudoku.entity.User;
 import com.sudoku.enums.Difficulty;
 import com.sudoku.service.GameService;
-import com.sudoku.service.UserService;
 import com.sudoku.util.SmartHintGenerator;
 
 @RestController
@@ -26,26 +24,13 @@ public class GameController {
     @Autowired
     private GameService gameService;
 
-    @Autowired
-    private UserService userService;
-
     @PostMapping("/start")
     public ResponseEntity<GameResponse> startGame(
-            @RequestParam(defaultValue = "MEDIUM") String difficulty,
-            @RequestHeader(value = "X-Anonymous-Token", required = false) String anonymousToken) {
-
+            @RequestParam(defaultValue = "MEDIUM") String difficulty) {
         try {
-            // Get or create anonymous user
-            User user = userService.getOrCreateAnonymousUser(anonymousToken);
-
             Difficulty difficultyEnum = Difficulty.fromString(difficulty);
-            GameState gameState = gameService.createGame(user.getId(), difficultyEnum.getValue());
-
-            // Return token in header for frontend to store
-            return ResponseEntity.ok()
-                    .header("X-Anonymous-Token", user.getAnonymousToken())
-                    .body(new GameResponse(gameState));
-
+            GameState gameState = gameService.createGame(difficultyEnum.getValue());
+            return ResponseEntity.ok(new GameResponse(gameState));
         } catch (Exception e) {
             System.err.println("Error starting game: " + e.getMessage());
             return ResponseEntity.badRequest().build();
@@ -57,15 +42,12 @@ public class GameController {
         try {
             GameState gameState = gameService.getGameState(gameId);
             return ResponseEntity.ok(new GameResponse(gameState));
-
         } catch (RuntimeException e) {
             String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-
             if (message.contains("not found")) {
                 return ResponseEntity.notFound().build();
             }
             return ResponseEntity.badRequest().build();
-
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -75,21 +57,14 @@ public class GameController {
     public ResponseEntity<?> makeMove(
             @PathVariable String gameId,
             @Validated @RequestBody MoveRequest moveRequest) {
-
         try {
             int row = moveRequest.getRow();
             int col = moveRequest.getCol();
             int value = moveRequest.getValue();
-
             GameState updatedGame = gameService.makeMove(gameId, row, col, value);
-            GameResponse response = new GameResponse(updatedGame);
-
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(new GameResponse(updatedGame));
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage() : "";
-            message = message.toLowerCase();
-
+            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
             if (message.contains("not found")) {
                 return ResponseEntity.notFound().build();
             } else if (message.contains("completed")) {
@@ -104,41 +79,31 @@ public class GameController {
     public ResponseEntity<?> undoMove(@PathVariable String gameId) {
         try {
             GameState gameState = gameService.undoMove(gameId);
-            GameResponse response = new GameResponse(gameState);
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(new GameResponse(gameState));
         } catch (RuntimeException e) {
             String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-
             if (message.contains("not found")) {
                 return ResponseEntity.notFound().build();
             } else if (message.contains("no moves to undo")) {
-                return ResponseEntity.status(400)
-                        .body(Map.of("error", "No moves to undo"));
+                return ResponseEntity.status(400).body(Map.of("error", "No moves to undo"));
             } else if (message.contains("completed")) {
-                return ResponseEntity.status(409)
-                        .body(Map.of("error", "Cannot undo - game is completed"));
+                return ResponseEntity.status(409).body(Map.of("error", "Cannot undo - game is completed"));
             } else {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", e.getMessage()));
+                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
             }
-
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
 
-     @PostMapping("/{gameId}/notes")
+    @PostMapping("/{gameId}/notes")
     public ResponseEntity<?> updateNotes(
             @PathVariable String gameId,
             @RequestBody NotesUpdateRequest request) {
-        
         try {
             GameState game = gameService.getGameState(gameId);
             game.setNotes(request.getNotes());
-            
             return ResponseEntity.ok(new GameResponse(game));
-            
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -151,18 +116,15 @@ public class GameController {
             return ResponseEntity.ok(new HintResponse(hintInfo));
         } catch (RuntimeException e) {
             String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-
             if (message.contains("not found")) {
                 return ResponseEntity.notFound().build();
             } else if (message.contains("already completed")) {
                 return ResponseEntity.status(409).build();
             } else if (message.contains("no hint available")) {
-                return ResponseEntity.status(404)
-                        .body("No hint available");
+                return ResponseEntity.status(404).body("No hint available");
             } else {
                 return ResponseEntity.badRequest().build();
             }
-
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -181,15 +143,12 @@ public class GameController {
     public ResponseEntity<?> validateSolution(@PathVariable String gameId) {
         try {
             boolean isValid = gameService.validateSolution(gameId);
-
             ValidationResponse response = new ValidationResponse(
                     isValid,
                     isValid ? "Puzzle solved correctly!" : "Puzzle contains errors");
-
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-
             if (message.contains("not found")) {
                 return ResponseEntity.notFound().build();
             }

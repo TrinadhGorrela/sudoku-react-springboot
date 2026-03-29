@@ -34,7 +34,7 @@ const RegisterPage = ({ onBack, onLoginClick, onRegisterSuccess }) => {
     <div className={styles.authContainer}>
       <div className={styles.authCard}>
         <h2 className={styles.title}>Create Account</h2>
-        <p className={styles.subtitle}>Join to compete on global leaderboards!</p>
+        <p className={styles.subtitle}>Sign up to track your statistics!</p>
         
         {error && <div className={styles.errorAlert}>{error}</div>}
 

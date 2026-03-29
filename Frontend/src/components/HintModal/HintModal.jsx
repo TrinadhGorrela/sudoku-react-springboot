@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
 import styles from "./HintModal.module.css";
 
-const HintModal = ({ show, hintInfo, onOkHint, onDismissHint }) => {
+const HintModal = ({ show, hintInfo, onHintAccept, onHintDismiss }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -15,12 +15,12 @@ const HintModal = ({ show, hintInfo, onOkHint, onDismissHint }) => {
 
   const slides = [
     {
-      title: "Last Remaining Cell" || "Hint",
+      title: hintInfo.strategy || "Hint",
       text: "Pay Attention to the highlighted Cell",
       button: null,
     },
     {
-      title: "Last Remaining Cell" || "Hint",
+      title: hintInfo.strategy || "Hint",
       text: hintInfo.explanation,
       button: null,
     },
@@ -31,7 +31,7 @@ const HintModal = ({ show, hintInfo, onOkHint, onDismissHint }) => {
         <Button
           variant="primary"
           size="sm"
-          onClick={onOkHint}
+          onClick={onHintAccept}
           className={styles.okBtn}
         >
           OK
@@ -57,7 +57,7 @@ const HintModal = ({ show, hintInfo, onOkHint, onDismissHint }) => {
       <div className={styles.hintModal}>
         <button
           className={styles.closeBtn}
-          onClick={onDismissHint}
+          onClick={onHintDismiss}
           aria-label="Close"
         >
           ✕

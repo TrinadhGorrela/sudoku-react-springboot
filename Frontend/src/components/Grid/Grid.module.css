@@ -5,21 +5,19 @@
   border-radius: 8px;
 }
 
-/* PAUSED STATE - Sudoku.com style - shows empty grid with NO numbers, NO highlights, NO colors */
 .paused .input,
 .paused .userValue,
 .paused .prefilled,
 .paused .input.userValue,
 .paused .input.error,
 .paused .error {
-  color: transparent !important; /* Hide ALL numbers */
+  color: transparent !important;
 }
 
 .paused .notesGrid {
-  opacity: 0 !important; /* Hide all notes */
+  opacity: 0 !important;
 }
 
-/* Remove ALL background colors when paused */
 .paused .cell,
 .paused .selectedCell,
 .paused .relatedCell,
@@ -31,20 +29,18 @@
 .paused .cell.selectedCell,
 .paused .cell.relatedCell,
 .paused .cell.error {
-  background-color: #ffffff !important; /* Clean white background for ALL cells */
-}
-
-/* Keep ONLY the grid borders */
-.paused .cell {
-  border: 1px solid #e0e0e0 !important; /* Light gray borders */
   background-color: #ffffff !important;
 }
 
-/* Keep 3x3 box borders visible */
+.paused .cell {
+  border: 1px solid #e0e0e0 !important;
+  background-color: #ffffff !important;
+}
+
 .paused .cell:nth-child(3),
 .paused .cell:nth-child(6),
 .paused .cell:nth-child(9) {
-  border-right: 3px solid #aaa !important; /* Medium gray for 3x3 borders */
+  border-right: 3px solid #aaa !important; 
 }
 
 .paused .cell:nth-child(1) {
@@ -61,7 +57,6 @@
   border-top: 3px solid #aaa !important;
 }
 
-/* Normal state styles */
 .table {
   border-collapse: collapse;
 }

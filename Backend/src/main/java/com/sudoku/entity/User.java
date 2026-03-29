@@ -16,8 +16,6 @@ public class User {
     @Column(nullable = false)
     private UserType userType = UserType.ANONYMOUS;
 
-    @Column(unique = true, nullable = false)
-    private String anonymousToken;
 
     @Column(unique = true)
     private String username;
@@ -80,13 +78,6 @@ public class User {
         this.userType = userType;
     }
 
-    public String getAnonymousToken() {
-        return anonymousToken;
-    }
-
-    public void setAnonymousToken(String anonymousToken) {
-        this.anonymousToken = anonymousToken;
-    }
 
     public String getUsername() {
         return username;

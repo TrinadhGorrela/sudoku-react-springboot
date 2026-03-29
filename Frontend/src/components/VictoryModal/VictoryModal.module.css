@@ -155,58 +155,7 @@
   border-bottom: none;
 }
 
-/* Leaderboard */
-.leaderboardContainer {
-  max-height: 400px;
-  overflow-y: auto;
-}
 
-.leaderboardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.userRankBadge {
-  background: linear-gradient(135deg, #4a6fa5 0%, #325aaf 100%);
-  color: white;
-  padding: 5px 15px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: bold;
-}
-
-.leaderboardTable :global(table) {
-  font-size: 0.9rem;
-}
-
-.currentUser {
-  background-color: #e3f2fd !important;
-  font-weight: bold;
-}
-
-.rankBadge {
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
-.medal {
-  font-size: 1.5rem;
-}
-
-.starSmall {
-  font-size: 0.9rem;
-}
-
-/* Signup Prompt */
-.signupPrompt {
-  border: 2px dashed #4a6fa5;
-}
-
-.signupPrompt :global(ul) {
-  padding-left: 20px;
-  margin-bottom: 10px;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
