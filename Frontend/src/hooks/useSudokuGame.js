@@ -16,6 +16,9 @@ const getEmptyNotes = () => {
     );
 };
 
+// ⭐ NEW: Maximum hints allowed per game
+const MAX_HINTS = 3;
+
 const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   // ============ STATE VARIABLES ============
   const [selected, setSelected] = useState(null);
@@ -47,6 +50,118 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     } catch (error) {
       console.error("Failed to save notes to localStorage:", error);
     }
+  };
+
+  // Save hint state to localStorage
+  const saveHintToStorage = (hint, highlighted) => {
+    try {
+      if (hint && highlighted) {
+        localStorage.setItem(
+          "sudokuHint",
+          JSON.stringify({ hint, highlighted }),
+        );
+      } else {
+        localStorage.removeItem("sudokuHint");
+      }
+    } catch (error) {
+      console.error("Failed to save hint to localStorage:", error);
+    }
+  };
+
+  // Load hint state from localStorage
+  const loadHintFromStorage = () => {
+    try {
+      const savedHint = localStorage.getItem("sudokuHint");
+      if (savedHint) {
+        const { hint, highlighted } = JSON.parse(savedHint);
+        return { hint, highlighted };
+      }
+    } catch (error) {
+      console.error("Failed to load hint from localStorage:", error);
+    }
+    return { hint: null, highlighted: null };
+  };
+
+  // ⭐ NEW: Save hints used count to localStorage
+  const saveHintsUsedToStorage = (count) => {
+    try {
+      localStorage.setItem("sudokuHintsUsed", count.toString());
+    } catch (error) {
+      console.error("Failed to save hints used to localStorage:", error);
+    }
+  };
+
+  // ⭐ NEW: Load hints used count from localStorage
+  const loadHintsUsedFromStorage = () => {
+    try {
+      const savedHints = localStorage.getItem("sudokuHintsUsed");
+      return savedHints ? parseInt(savedHints, 10) : 0;
+    } catch (error) {
+      console.error("Failed to load hints used from localStorage:", error);
+      return 0;
+    }
+  };
+
+  // ⭐ NEW: Generate notes for a specific cell based on solution
+  const generateNotesForCell = (
+    rowIdx,
+    colIdx,
+    currentBoard,
+    solutionBoard,
+  ) => {
+    // If cell already has a value, no notes needed
+    if (
+      currentBoard[rowIdx][colIdx] !== null &&
+      currentBoard[rowIdx][colIdx] !== 0
+    ) {
+      return [];
+    }
+
+    const possibleNumbers = [];
+
+    // Check which numbers are valid for this cell
+    for (let num = 1; num <= 9; num++) {
+      let isValid = true;
+
+      // Check row
+      for (let c = 0; c < 9; c++) {
+        if (currentBoard[rowIdx][c] === num) {
+          isValid = false;
+          break;
+        }
+      }
+
+      if (!isValid) continue;
+
+      // Check column
+      for (let r = 0; r < 9; r++) {
+        if (currentBoard[r][colIdx] === num) {
+          isValid = false;
+          break;
+        }
+      }
+
+      if (!isValid) continue;
+
+      // Check 3x3 box
+      const boxRow = Math.floor(rowIdx / 3) * 3;
+      const boxCol = Math.floor(colIdx / 3) * 3;
+      for (let r = boxRow; r < boxRow + 3; r++) {
+        for (let c = boxCol; c < boxCol + 3; c++) {
+          if (currentBoard[r][c] === num) {
+            isValid = false;
+            break;
+          }
+        }
+        if (!isValid) break;
+      }
+
+      if (isValid) {
+        possibleNumbers.push(num);
+      }
+    }
+
+    return possibleNumbers;
   };
 
   // Clear notes in related cells when a number is placed
@@ -96,6 +211,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setMistakes(0);
       setTime(0);
       setHintsUsed(0);
+      saveHintsUsedToStorage(0); // ⭐ Reset hints count
       setIsTimerRunning(true);
       setHasGameStarted(true);
       setSelected(null);
@@ -110,6 +226,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setIsNoteMode(false);
       setHintInfo(null);
       setHighlightedCell(null);
+      saveHintToStorage(null, null);
 
       saveGameState(
         gameData.gameId,
@@ -158,15 +275,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     // NORMAL MODE - Place numbers
     console.log("handleInput called with:", { rIdx, cIdx, value });
 
-    const correctValue = solution[rIdx][cIdx];
-    const isWrongMove = value !== null && value !== correctValue;
-
-    // OPTIMISTIC UPDATE
-    const newBoard = board.map((row) => [...row]);
-    const previousValue = newBoard[rIdx][cIdx];
-    newBoard[rIdx][cIdx] = value;
-
-    setBoard(newBoard);
+    const previousValue = board[rIdx][cIdx];
 
     // Clear notes when placing a number
     if (value !== null) {
@@ -180,10 +289,11 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       clearRelatedNotes(rIdx, cIdx, value);
     }
 
-    // Clear hint if placing a number
+    // Clear hint if placing a number in any cell
     if (value !== null) {
       setHighlightedCell(null);
       setHintInfo(null);
+      saveHintToStorage(null, null);
     }
 
     // Start timer on first input
@@ -198,7 +308,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       console.log("🔥 BACKEND RESPONSE:", {
         mistakes: gameData.mistakes,
         currentBoard: gameData.currentBoard,
-        isWrongMove,
         previousValue,
         currentValue: value,
       });
@@ -221,20 +330,24 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
         JSON.stringify(gameData.currentBoard),
       );
 
-      if (gameData.completed) {
+      if (gameData.completed || gameData.mistakes >= 3) {
         setIsCompleted(true);
         setIsTimerRunning(false);
+        setHighlightedCell(null);
+        setHintInfo(null);
+        saveHintToStorage(null, null);
       }
     } catch (error) {
-      console.error("Backend error:", error);
+      console.error("❌ Backend error:", error);
 
-      if (isWrongMove && previousValue !== value) {
-        setMistakes((prev) => prev + 1);
+      try {
+        const gameData = await gameAPI.getGame(gameId);
+        setBoard(gameData.currentBoard);
+        setMistakes(gameData.mistakes || 0);
+        setSolution(gameData.solution);
+      } catch (fetchError) {
+        console.error("❌ Failed to fetch game state:", fetchError);
       }
-
-      const revertedBoard = board.map((row) => [...row]);
-      revertedBoard[rIdx][cIdx] = previousValue;
-      setBoard(revertedBoard);
     }
   };
 
@@ -263,12 +376,30 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
         gameData.currentBoard,
         puzzle,
       );
+
+      setHighlightedCell(null);
+      setHintInfo(null);
+      saveHintToStorage(null, null);
     } catch (error) {
       console.error("❌ Undo failed:", error);
     }
   };
 
   const handleHint = async () => {
+    // ⭐ CHECK 1: Game must be running (not paused)
+    if (!isTimerRunning) {
+      alert("⏸️ Please resume the game to use hints!");
+      return;
+    }
+
+    // ⭐ CHECK 2: Hint limit check
+    if (hintsUsed >= MAX_HINTS) {
+      alert(
+        `❌ No more hints available! You've used all ${MAX_HINTS} hints for this game.`,
+      );
+      return;
+    }
+
     if (!gameId) {
       console.log("No game ID available");
       return;
@@ -282,31 +413,123 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
         hintData.row !== undefined &&
         hintData.col !== undefined
       ) {
-        setHighlightedCell(null);
-        setHintInfo(null);
-
         const cellKey = `${hintData.row}-${hintData.col}`;
-        setHighlightedCell(cellKey);
-        setHintInfo({
+        const newHintInfo = {
           row: hintData.row,
           col: hintData.col,
           value: hintData.value,
           strategy: hintData.strategy || "Basic Strategy",
           explanation:
             hintData.explanation || `Try placing ${hintData.value} here`,
-        });
+        };
 
-        // ⭐ INCREMENT HINTS USED
-        setHintsUsed((prev) => prev + 1);
+        setHighlightedCell(cellKey);
+        setHintInfo(newHintInfo);
+
+        saveHintToStorage(newHintInfo, cellKey);
+
+        // INCREMENT HINTS USED
+        const newHintsCount = hintsUsed + 1;
+        setHintsUsed(newHintsCount);
+        saveHintsUsedToStorage(newHintsCount);
+
+        console.log(`💡 Hint ${newHintsCount}/${MAX_HINTS} used`);
       }
     } catch (error) {
       console.error("❌ Hint failed:", error);
-      alert("No hints available for this puzzle.");
+
+      // ⭐ FALLBACK: If no hint available from backend, provide notes instead
+      const errorMessage = error.message || error.toString();
+
+      if (
+        errorMessage.includes("No hint available") ||
+        errorMessage.includes("404")
+      ) {
+        console.log("🔄 No hints from backend, generating notes fallback...");
+
+        // Find an empty cell and generate notes for it
+        let foundEmptyCell = false;
+
+        for (let r = 0; r < 9 && !foundEmptyCell; r++) {
+          for (let c = 0; c < 9 && !foundEmptyCell; c++) {
+            if (board[r][c] === null || board[r][c] === 0) {
+              const cellNotes = generateNotesForCell(r, c, board, solution);
+
+              if (cellNotes.length > 0) {
+                // Update notes for this cell
+                setNotes((prev) => {
+                  const newNotes = prev.map((row) =>
+                    row.map((cell) => [...cell]),
+                  );
+                  newNotes[r][c] = cellNotes;
+                  saveNotesToStorage(newNotes);
+                  return newNotes;
+                });
+
+                // Highlight the cell
+                const cellKey = `${r}-${c}`;
+                setHighlightedCell(cellKey);
+
+                // Create a notes-based hint info
+                setHintInfo({
+                  row: r,
+                  col: c,
+                  value: cellNotes[0], // First possible value
+                  strategy: "Possible Values",
+                  explanation: `This cell can contain: ${cellNotes.join(", ")}. Notes have been added to help you.`,
+                  isNotesHint: true, // Flag to indicate this is a notes-based hint
+                });
+
+                saveHintToStorage(
+                  {
+                    row: r,
+                    col: c,
+                    value: cellNotes[0],
+                    strategy: "Possible Values",
+                    explanation: `This cell can contain: ${cellNotes.join(", ")}. Notes have been added to help you.`,
+                    isNotesHint: true,
+                  },
+                  cellKey,
+                );
+
+                // INCREMENT HINTS USED for notes hint too
+                const newHintsCount = hintsUsed + 1;
+                setHintsUsed(newHintsCount);
+                saveHintsUsedToStorage(newHintsCount);
+
+                foundEmptyCell = true;
+                console.log(
+                  `📝 Notes hint provided for cell [${r},${c}]: ${cellNotes.join(", ")}`,
+                );
+                alert(
+                  `💡 Hint: Possible values for this cell are ${cellNotes.join(", ")}. Notes have been added!`,
+                );
+              }
+            }
+          }
+        }
+
+        if (!foundEmptyCell) {
+          alert(
+            "❌ No hints available - the puzzle might be complete or in an invalid state!",
+          );
+        }
+      } else {
+        alert("❌ No hints available for this puzzle.");
+      }
     }
   };
 
   const handleOkHint = async () => {
     if (!hintInfo) return;
+
+    // ⭐ If this is a notes-based hint, just dismiss it (don't auto-fill)
+    if (hintInfo.isNotesHint) {
+      setHighlightedCell(null);
+      setHintInfo(null);
+      saveHintToStorage(null, null);
+      return;
+    }
 
     const wasInNoteMode = isNoteMode;
 
@@ -318,10 +541,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     const row = hintInfo.row;
     const col = hintInfo.col;
     const value = hintInfo.value;
-
-    const newBoard = [...board];
-    newBoard[row][col] = value;
-    setBoard(newBoard);
 
     // Clear notes in the cell and related cells
     setNotes((prev) => {
@@ -340,15 +559,25 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setMistakes(gameData.mistakes || 0);
       setSolution(gameData.solution);
 
-      if (gameData.completed) {
+      saveGameState(
+        gameData.gameId,
+        difficulty,
+        time,
+        isTimerRunning,
+        gameData.currentBoard,
+        puzzle,
+      );
+      localStorage.setItem(
+        "sudokuBoard",
+        JSON.stringify(gameData.currentBoard),
+      );
+
+      if (gameData.completed || gameData.mistakes >= 3) {
         setIsCompleted(true);
         setIsTimerRunning(false);
       }
     } catch (error) {
       console.error("❌ Hint placement failed:", error);
-      const revertBoard = [...board];
-      revertBoard[row][col] = null;
-      setBoard(revertBoard);
     }
 
     if (wasInNoteMode) {
@@ -357,16 +586,20 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
 
     setHighlightedCell(null);
     setHintInfo(null);
+    saveHintToStorage(null, null);
   };
 
   const dismissHint = () => {
     setHighlightedCell(null);
     setHintInfo(null);
+    saveHintToStorage(null, null);
   };
 
   const handleNewGame = () => {
     clearGameState();
-    localStorage.removeItem("sudokuNotes"); // Clear notes on new game
+    localStorage.removeItem("sudokuNotes");
+    localStorage.removeItem("sudokuHint");
+    localStorage.removeItem("sudokuHintsUsed"); // ⭐ Clear hints count
     loadGame(difficulty);
   };
 
@@ -374,6 +607,8 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     setDifficulty(newDifficulty);
     clearGameState();
     localStorage.removeItem("sudokuNotes");
+    localStorage.removeItem("sudokuHint");
+    localStorage.removeItem("sudokuHintsUsed"); // ⭐ Clear hints count
     loadGame(newDifficulty);
   };
 
@@ -401,7 +636,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
         setBoard(JSON.parse(savedBoard));
       }
 
-      // ⭐ LOAD NOTES FROM LOCALSTORAGE
+      // LOAD NOTES FROM LOCALSTORAGE
       const savedNotes = localStorage.getItem("sudokuNotes");
       if (savedNotes) {
         try {
@@ -416,9 +651,26 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
         setNotes(getEmptyNotes());
       }
 
-      // Don't persist hints across refreshes
-      setHintInfo(null);
-      setHighlightedCell(null);
+      // ⭐ LOAD HINTS USED COUNT
+      const savedHintsUsed = loadHintsUsedFromStorage();
+      setHintsUsed(savedHintsUsed);
+      console.log(`✅ Loaded hints used: ${savedHintsUsed}/${MAX_HINTS}`);
+
+      // LOAD HINT FROM LOCALSTORAGE
+      const { hint, highlighted } = loadHintFromStorage();
+      if (hint && highlighted) {
+        const [hintRow, hintCol] = highlighted.split("-").map(Number);
+        const currentValue = gameData.currentBoard[hintRow][hintCol];
+
+        if (currentValue === null || currentValue === 0) {
+          setHintInfo(hint);
+          setHighlightedCell(highlighted);
+          console.log("✅ Loaded hint from localStorage:", hint);
+        } else {
+          console.log("ℹ️ Hint cell already filled, clearing hint");
+          saveHintToStorage(null, null);
+        }
+      }
 
       setLoading(false);
     } catch (error) {
@@ -520,6 +772,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     highlightedCell,
     errorCells,
     hintsUsed,
+    maxHints: MAX_HINTS, // ⭐ Export max hints for UI display
 
     loadGame,
     handleInput,

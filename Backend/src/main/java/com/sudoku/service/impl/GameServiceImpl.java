@@ -133,8 +133,12 @@ public class GameServiceImpl implements GameService {
         game.addMoveToHistory(moveHistory);
         System.out.println("Move added to history: " + moveHistory);
 
-        // Check if board is complete
-        if (isBoardComplete(game.getCurrentBoard(), game.getSolution())) {
+        // Check if game is over (3 mistakes) or board is complete
+        if (game.getMistakes() >= 3) {
+            game.setCompleted(true);
+            game.setTimeElapsed(System.currentTimeMillis() - game.getStartTime());
+            System.out.println("Game over (3 mistakes) for user: " + game.getUserId());
+        } else if (isBoardComplete(game.getCurrentBoard(), game.getSolution())) {
             game.setCompleted(true);
             game.setTimeElapsed(System.currentTimeMillis() - game.getStartTime());
 
@@ -184,13 +188,8 @@ public class GameServiceImpl implements GameService {
 
         game.getCurrentBoard()[row][col] = previousValue;
 
-        // Only decrement if this move ACTUALLY incremented the counter
-        if (lastMove.isWasMistake()) {
-            game.setMistakes(Math.max(0, game.getMistakes() - 1));
-            System.out.println("⏪ Undid move that incremented mistakes - mistakes now: " + game.getMistakes());
-        } else {
-            System.out.println("⏪ Undid move (no mistake decrement needed)");
-        }
+        // Do not decrement mistake counter on undo - mistakes are permanent
+        System.out.println("⏪ Undid move. Mistakes remain at: " + game.getMistakes());
 
         System.out.println("⏪ Undo successful: Restored [" + row + "," + col + "] to " + previousValue);
 
@@ -204,7 +203,18 @@ public class GameServiceImpl implements GameService {
             throw new RuntimeException("Game already completed");
         }
         HintInfo hint = SmartHintGenerator.getHint(game.getCurrentBoard());
-        if (hint == null) {
+        
+        // If the smart hint is missing or incorrect due to previous user mistakes on the board, 
+        // fallback to a guaranteed correct hint directly from the solution.
+        if (hint == null || hint.value != game.getSolution()[hint.row][hint.col]) {
+            for (int i = 0; i < 9; i++) {
+                for (int j = 0; j < 9; j++) {
+                    if (game.getCurrentBoard()[i][j] == 0) {
+                        return new HintInfo(i, j, game.getSolution()[i][j], "Reveal Cell", 
+                            "The next correct number for this cell is " + game.getSolution()[i][j]);
+                    }
+                }
+            }
             throw new RuntimeException("No hint available");
         }
 

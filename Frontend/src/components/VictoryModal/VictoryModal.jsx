@@ -104,7 +104,7 @@ const VictoryModal = ({
 
   return (
     <>
-      {show && (
+      {show && mistakes < 3 && (
         <Confetti
           width={windowDimension.width}
           height={windowDimension.height}
@@ -123,22 +123,26 @@ const VictoryModal = ({
         className={styles.victoryModal}
       >
         <Modal.Header
-          className={`${styles.bgGradientSuccess} text-white border-0`}
+          className={mistakes >= 3 ? "bg-danger text-white border-0" : `${styles.bgGradientSuccess} text-white border-0`}
         >
           <Modal.Title className="w-100 text-center">
             <div className={styles.victoryHeader}>
-              <h2 className="display-4 fw-bold mb-2">🎉 Victory! 🎉</h2>
-              <div
-                className={styles.gradeBadge}
-                style={{ backgroundColor: getGradeColor(scoreData.grade) }}
-              >
-                Grade: {scoreData.grade}
-              </div>
+              <h2 className="display-4 fw-bold mb-2">
+                {mistakes >= 3 ? "💀 Game Over! 💀" : "🎉 Victory! 🎉"}
+              </h2>
+              {mistakes < 3 && (
+                <div
+                  className={styles.gradeBadge}
+                  style={{ backgroundColor: getGradeColor(scoreData.grade) }}
+                >
+                  Grade: {scoreData.grade}
+                </div>
+              )}
             </div>
           </Modal.Title>
         </Modal.Header>
 
-        <Modal.Body className="p-4">
+        <Modal.Body className="p-3">
           <Tabs defaultActiveKey="summary" className="mb-3">
             {/* ========== SUMMARY TAB ========== */}
             <Tab eventKey="summary" title="📊 Summary">
@@ -164,15 +168,21 @@ const VictoryModal = ({
               </div>
 
               {/* Score Display */}
-              <div className={`${styles.scoreContainer} mb-4`}>
-                <div className={styles.totalScore}>
-                  <div className={styles.scoreLabel}>Total Score</div>
-                  <div className={styles.scoreValue}>
-                    {scoreData.score.toLocaleString()}
+              {mistakes < 3 ? (
+                <div className={`${styles.scoreContainer} mb-4`}>
+                  <div className={styles.totalScore}>
+                    <div className={styles.scoreLabel}>Total Score</div>
+                    <div className={styles.scoreValue}>
+                      {scoreData.score.toLocaleString()}
+                    </div>
+                    <div className={styles.rankName}>{rankName}</div>
                   </div>
-                  <div className={styles.rankName}>{rankName}</div>
                 </div>
-              </div>
+              ) : (
+                <div className="text-center mb-4 text-danger mt-3">
+                  <h5>You reached 3 mistakes. Better luck next time!</h5>
+                </div>
+              )}
 
               {/* Stats Grid */}
               <div className={`${styles.statsGrid} mb-4`}>
@@ -198,66 +208,10 @@ const VictoryModal = ({
                 </div>
               </div>
 
-              {/* Score Breakdown */}
-              <div className={styles.scoreBreakdown}>
-                <h5 className="mb-3">Score Breakdown</h5>
-                <div className={styles.breakdownItem}>
-                  <span>Base Points ({difficulty})</span>
-                  <span className="text-success">
-                    +{scoreData.breakdown.basePoints}
-                  </span>
-                </div>
-                <div className={styles.breakdownItem}>
-                  <span>Time Bonus</span>
-                  <span className="text-success">
-                    +{scoreData.breakdown.timeBonus}
-                  </span>
-                </div>
-                {scoreData.breakdown.mistakePenalty < 0 && (
-                  <div className={styles.breakdownItem}>
-                    <span>Mistake Penalty</span>
-                    <span className="text-danger">
-                      {scoreData.breakdown.mistakePenalty}
-                    </span>
-                  </div>
-                )}
-                {scoreData.breakdown.hintPenalty < 0 && (
-                  <div className={styles.breakdownItem}>
-                    <span>Hint Penalty</span>
-                    <span className="text-danger">
-                      {scoreData.breakdown.hintPenalty}
-                    </span>
-                  </div>
-                )}
-                {scoreData.breakdown.perfectBonus > 0 && (
-                  <div className={styles.breakdownItem}>
-                    <span>Perfect Game Bonus! 🎉</span>
-                    <span className="text-warning">
-                      +{scoreData.breakdown.perfectBonus}
-                    </span>
-                  </div>
-                )}
-                <hr />
-                <div className={`${styles.breakdownItem} fw-bold`}>
-                  <span>Total Score</span>
-                  <span className="text-primary">{scoreData.score}</span>
-                </div>
-              </div>
-
               {/* Anonymous User Prompt */}
               {isAnonymous && (
-                <div
-                  className={`${styles.signupPrompt} mt-4 p-3 bg-light rounded`}
-                >
-                  <h6 className="mb-2">🎯 Sign up to save your score!</h6>
-                  <ul className="small text-muted mb-2">
-                    <li>Compete on global leaderboards</li>
-                    <li>Track your progress over time</li>
-                    <li>Earn achievements and badges</li>
-                  </ul>
-                  <Button variant="success" size="sm">
-                    Create Free Account
-                  </Button>
+                <div className="text-center mt-3 text-muted" style={{ fontSize: '0.85rem' }}>
+                  <a href="#" className="text-decoration-none fw-bold text-primary">Sign in</a> to save your scores to the global leaderboard!
                 </div>
               )}
             </Tab>
@@ -347,14 +301,12 @@ const VictoryModal = ({
           </Tabs>
 
           {/* Footer Button */}
-          <Button
-            variant="primary"
-            size="lg"
-            className="w-100 rounded-pill fw-bold py-3 shadow mt-3"
+          <button
+            className={`${styles.playAgainBtn} w-100 rounded-pill fw-bold py-2 shadow mt-2`}
             onClick={onNewGame}
           >
             Play Again
-          </Button>
+          </button>
         </Modal.Body>
       </Modal>
     </>

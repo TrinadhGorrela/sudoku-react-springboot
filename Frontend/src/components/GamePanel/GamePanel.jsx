@@ -14,6 +14,8 @@ const GamePanel = ({
   onPencil,
   isNoteMode,
   onHint,
+  hintsUsed = 0,
+  maxHints = 3, // ⭐ NEW: Max hints allowed
 }) => {
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -27,6 +29,10 @@ const GamePanel = ({
       handleInput(row, col, number);
     }
   };
+
+  // ⭐ Check if hints are available
+  const hintsRemaining = maxHints - hintsUsed;
+  const hintsDisabled = !isTimerRunning || hintsUsed >= maxHints;
 
   return (
     <div className={styles.gamePanel}>
@@ -101,17 +107,41 @@ const GamePanel = ({
             <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
           </svg>
         </button>
-        <button className={styles.toolBtn} onClick={onHint} title="Get Hint">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            fill="currentColor"
-            viewBox="0 0 16 16"
+        
+        {/* ⭐ UPDATED: Hint button with counter and disabled state */}
+        <div className={styles.hintBtnContainer}>
+          <button 
+            className={classNames(styles.toolBtn, {
+              [styles.disabled]: hintsDisabled
+            })}
+            onClick={onHint} 
+            title={
+              !isTimerRunning 
+                ? "Resume game to use hints" 
+                : hintsUsed >= maxHints 
+                  ? "No more hints available" 
+                  : `Get Hint (${hintsRemaining} remaining)`
+            }
+            disabled={hintsDisabled}
           >
-            <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              fill="currentColor"
+              viewBox="0 0 16 16"
+            >
+              <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m6-5a5 5 0 0 0-3.479 8.592c.263.254.514.564.676.941L5.83 12h4.342l.632-1.467c.162-.377.413-.687.676-.941A5 5 0 0 0 8 1" />
+            </svg>
+          </button>
+          {/* ⭐ NEW: Hint counter badge */}
+          <span className={classNames(styles.hintCounter, {
+            [styles.hintsLow]: hintsRemaining === 1,
+            [styles.hintsNone]: hintsRemaining === 0
+          })}>
+            {hintsRemaining}
+          </span>
+        </div>
       </div>
 
       {/* 3. Number Pad */}
@@ -128,9 +158,9 @@ const GamePanel = ({
       </div>
 
       {/* 4. Footer */}
-      <button onClick={onNewGame} className={styles.newGameBtn}>
+    {/*  <button onClick={onNewGame} className={styles.newGameBtn}>
         New Game
-      </button>
+      </button>*/} 
     </div>
   );
 };

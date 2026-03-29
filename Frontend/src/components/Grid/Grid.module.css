@@ -108,7 +108,7 @@
 }
 
 .userValue {
-  color: rgb(125, 125, 192);
+  color: #325aaf;
   font-weight: 600;
 }
 
@@ -233,8 +233,8 @@
   position: relative;
   background: linear-gradient(
     145deg,
-    rgba(102, 126, 234, 0.15),
-    rgba(118, 75, 162, 0.15)
+    rgba(74, 111, 165, 0.15),
+    rgba(50, 90, 175, 0.15)
   );
   border-radius: 8px;
 }
@@ -245,12 +245,12 @@
 }
 
 .cell.hintCell .input.hintHighlighted {
-  border: 2px solid #667eea;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+  border: 2px solid #4a6fa5;
+  box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.3);
   background: linear-gradient(
     145deg,
-    rgba(102, 126, 234, 0.1),
-    rgba(118, 75, 162, 0.1)
+    rgba(74, 111, 165, 0.1),
+    rgba(50, 90, 175, 0.1)
   );
 }
 
@@ -265,13 +265,13 @@
 
 @keyframes pulseHighlight {
   0% {
-    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+    box-shadow: 0 0 0 0 rgba(74, 111, 165, 0.4);
   }
   70% {
-    box-shadow: 0 0 0 8px rgba(102, 126, 234, 0);
+    box-shadow: 0 0 0 8px rgba(74, 111, 165, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+    box-shadow: 0 0 0 0 rgba(74, 111, 165, 0);
   }
 }
 
@@ -304,11 +304,11 @@
 
 /* Make sure the hint styling doesn't conflict with other states */
 .input.hintHighlighted.selectedCell {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.5);
+  border-color: #4a6fa5;
+  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.5);
 }
 
 .input.hintHighlighted.error {
   border-color: #ff6b6b;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 0 2px rgba(74, 111, 165, 0.3);
 }

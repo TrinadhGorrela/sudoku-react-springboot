@@ -1,4 +1,5 @@
 .container {
+  position: relative;
   min-height: 100vh;
   background-color: #f0f4f8;
   display: flex;
@@ -8,8 +9,19 @@
 }
 
 .header {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   text-align: center;
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px 20px 0 20px;
+}
+
+.header-top {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .main {
@@ -18,12 +30,64 @@
   align-items: center;
   gap: 40px;
   flex-wrap: wrap;
-  min-height: 600px;
 }
 
 .heading {
   color: #325aaf;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+}
+
+/* Auth Buttons */
+.auth-container {
+  position: absolute;
+  right: 0;
+  display: flex;
+  gap: 15px;
+}
+
+.user-dropdown-toggle.btn {
+  background: white;
+  border: 2px solid #325aaf;
+  color: #325aaf;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.user-dropdown-toggle.btn:hover, .user-dropdown-toggle.btn:focus, .user-dropdown-toggle.btn:active, .show > .user-dropdown-toggle.btn {
+  background: #325aaf !important;
+  color: white !important;
+  border-color: #325aaf !important;
+  box-shadow: 0 4px 10px rgba(50, 90, 175, 0.3) !important;
+}
+
+/* Hide the default dropdown arrow */
+.user-dropdown-toggle::after {
+  display: none !important;
+}
+
+.user-dropdown-menu {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  padding: 10px 0;
+  min-width: 200px;
+}
+
+.user-dropdown-menu .dropdown-item {
+  padding: 10px 20px;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.user-dropdown-menu .dropdown-item:hover {
+  background-color: #f0f4f8;
+  color: #325aaf;
 }
 
 .loading-container {

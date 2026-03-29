@@ -1,18 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Grid from "./components/Grid/Grid";
 import GamePanel from "./components/GamePanel/GamePanel";
 import DifficultySelector from "./components/DifficultySelector/DifficultySelector";
 import HintModal from "./components/HintModal/HintModal";
 import useSudokuGame from "./hooks/useSudokuGame";
 import VictoryModal from "./components/VictoryModal/VictoryModal";
+import LoginPage from "./components/Auth/LoginPage";
+import RegisterPage from "./components/Auth/RegisterPage";
 import { formatTime } from "./utils/sudokuHelpers";
-import { initializeApp } from "./services/api";
+import { initializeApp, clearAnonymousToken } from "./services/api";
+import { Dropdown } from "react-bootstrap";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
+  const [currentView, setCurrentView] = useState("game"); // 'game', 'login', 'register'
+  const [user, setUser] = useState(null);
+
+  const handleLoginSuccess = (userData) => {
+    console.log("Logged in:", userData);
+    setUser(userData);
+    setCurrentView("game");
+  };
+
+  const handleRegisterSuccess = (userData) => {
+    console.log("Registered:", userData);
+    setUser(userData);
+    setCurrentView("game");
+  };
+
+  const handleLogout = () => {
+    clearAnonymousToken();
+    setUser(null);
+    initializeApp().then(setUser);
+  };
+
   useEffect(() => {
-    initializeApp();
+    initializeApp().then(setUser);
   }, []);
 
   const {
@@ -30,6 +54,7 @@ function App() {
     notes,
     isNoteMode,
     hintsUsed,
+    maxHints, // ⭐ NEW: Get max hints from hook
     toggleNoteMode,
     handleInput,
     handleNewGame,
@@ -45,6 +70,26 @@ function App() {
     handleOkHint,
     dismissHint,
   } = useSudokuGame("MEDIUM");
+
+  if (currentView === "login") {
+    return (
+      <LoginPage
+        onBack={() => setCurrentView("game")}
+        onRegisterClick={() => setCurrentView("register")}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
+  }
+
+  if (currentView === "register") {
+    return (
+      <RegisterPage
+        onBack={() => setCurrentView("game")}
+        onLoginClick={() => setCurrentView("login")}
+        onRegisterSuccess={handleRegisterSuccess}
+      />
+    );
+  }
 
   return (
     <div className="container">
@@ -64,13 +109,41 @@ function App() {
         timeElapsed={time}
         difficulty={difficulty}
         mistakes={mistakes}
-        hintsUsed={hintInfo}
-        onNewGame={() => console.log("New game clicked!")}
+        hintsUsed={hintsUsed}
+        onNewGame={handleNewGame}
         isAnonymous={true}
       />
 
       <header className="header">
-        <h1 className="heading">Sudoku</h1>
+        <div className="header-top">
+          <h1 className="heading">Sudoku</h1>
+          <div className="auth-container">
+            <Dropdown align="end">
+              <Dropdown.Toggle variant="light" className="user-dropdown-toggle" id="dropdown-basic">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="20" height="20" fill="currentColor">
+                  <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/>
+                </svg>
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="user-dropdown-menu">
+                {user && user.userType === 'REGISTERED' ? (
+                  <>
+                    <Dropdown.ItemText style={{ fontWeight: 600, color: '#325aaf' }}>
+                      Welcome, {user.username}!
+                    </Dropdown.ItemText>
+                    <Dropdown.Divider />
+                    <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
+                  </>
+                ) : (
+                  <>
+                    <Dropdown.Item onClick={() => setCurrentView('login')}>Login</Dropdown.Item>
+                    <Dropdown.Item onClick={() => setCurrentView('register')}>Register</Dropdown.Item>
+                  </>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
+          </div>
+        </div>
         <DifficultySelector
           difficulty={difficulty}
           setDifficulty={handleDifficultyChange}
@@ -94,8 +167,6 @@ function App() {
           />
         </div>
         <div style={{ position: "relative" }}>
-          {" "}
-          {/* Add relative positioning */}
           <GamePanel
             mistakes={mistakes}
             time={time}
@@ -108,6 +179,8 @@ function App() {
             onPencil={toggleNoteMode}
             isNoteMode={isNoteMode}
             onHint={handleHint}
+            hintsUsed={hintsUsed}
+            maxHints={maxHints} // ⭐ NEW: Pass max hints to GamePanel
           />
           {/* HintModal will popup inside GamePanel container */}
           <HintModal

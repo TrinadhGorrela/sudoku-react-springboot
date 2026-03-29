@@ -85,7 +85,7 @@
   transition: background-color 0.2s;
 }
 
-.toolBtn:hover {
+.toolBtn:hover:not(.disabled) {
   background-color: #d0e1f0;
 }
 
@@ -98,14 +98,64 @@
   fill: white;
 }
 
+/* ⭐ NEW: Disabled hint button */
+.toolBtn.disabled {
+  background-color: #e2ebf3;
+  color: #8faada;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.toolBtn.disabled:hover {
+  background-color: #e2ebf3;
+}
+
+/* ⭐ NEW: Hint button container with counter */
+.hintBtnContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.hintCounter {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: linear-gradient(135deg, #4a6fa5 0%, #325aaf 100%);
+  color: white;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hintCounter.hintsNone {
+  opacity: 0.5;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 /* --- Hint Card (Between Header and Tools) --- */
 .hintCard {
   margin: 0 0 16px 0;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4a6fa5 0%, #325aaf 100%);
   color: white;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(74, 111, 165, 0.3);
   animation: slideIn 0.3s ease;
 }
 
@@ -152,7 +202,7 @@
 
 .okHintBtn {
   background: white;
-  color: #667eea;
+  color: #4a6fa5;
   border: none;
   font-weight: 600;
   padding: 6px 20px;
@@ -163,12 +213,12 @@
 
 .okHintBtn:hover {
   background: rgba(255, 255, 255, 0.95);
-  color: #5a67d8;
+  color: #325aaf;
   transform: scale(1.05);
 }
 
 .hintBtn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4a6fa5 0%, #325aaf 100%);
   color: white;
 }
 
@@ -197,10 +247,10 @@
 }
 
 .hintNumber {
-  background: linear-gradient(135deg, #667eea 20%, #764ba2 100%);
+  background: linear-gradient(135deg, #4a6fa5 20%, #325aaf 100%);
   color: white !important;
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(74, 111, 165, 0.4);
 }
 
 /* --- Footer --- */
