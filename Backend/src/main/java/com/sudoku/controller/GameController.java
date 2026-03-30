@@ -32,8 +32,8 @@ public class GameController {
             GameState gameState = gameService.createGame(difficultyEnum.getValue());
             return ResponseEntity.ok(new GameResponse(gameState));
         } catch (Exception e) {
-            System.err.println("Error starting game: " + e.getMessage());
-            return ResponseEntity.badRequest().build();
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of("error", e.getClass().getSimpleName(), "message", e.getMessage() != null ? e.getMessage() : "null", "cause", e.getCause() != null ? e.getCause().getMessage() : "null"));
         }
     }
 
@@ -101,13 +101,17 @@ public class GameController {
             @PathVariable String gameId,
             @RequestBody NotesUpdateRequest request) {
         try {
-            GameState game = gameService.getGameState(gameId);
-            game.setNotes(request.getNotes());
+            GameState game = gameService.saveNotes(gameId, request.getNotes());
             return ResponseEntity.ok(new GameResponse(game));
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
+            if (message.contains("not found")) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.badRequest().build();
         }
     }
+
 
     @GetMapping("/{gameId}/hint")
     public ResponseEntity<?> getHint(@PathVariable String gameId) {

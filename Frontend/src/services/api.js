@@ -1,39 +1,67 @@
 const API_BASE_URL = "/api/game";
 const USER_API_URL = "/api/user";
 
+async function apiCall(url, options = {}) {
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    let errorData = {};
+    try {
+      errorData = await response.clone().json();
+    } catch {
+      try {
+        const text = await response.clone().text();
+        if (text) errorData = { message: text };
+      } catch {}
+    }
+
+    const errorMsg = errorData.message || errorData.error;
+
+    if (response.status === 404 && url.includes("/hint")) {
+      throw new Error(errorMsg || "No hint available");
+    }
+    if (response.status === 404) {
+      throw new Error(errorMsg || "Game not found");
+    }
+    if (response.status === 409 && url.includes("/undo")) {
+      throw new Error(errorMsg || "Cannot undo - game is completed");
+    }
+    if (response.status === 409) {
+      throw new Error(errorMsg || "Game already completed");
+    }
+    if (response.status === 400 && url.includes("/undo")) {
+      throw new Error(errorMsg || "No moves to undo");
+    }
+
+    throw new Error(errorMsg || `HTTP error! status: ${response.status}`);
+  }
+
+  if (response.status === 204 || options.method === "DELETE") {
+    return response;
+  }
+
+  return await response.json();
+}
+
 export const userAPI = {
   register: async (username, email, password) => {
-    const response = await fetch(`${USER_API_URL}/register`, {
+    return await apiCall(`${USER_API_URL}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, email, password }),
     });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Registration failed");
-    }
-    return await response.json();
   },
 
   login: async (usernameOrEmail, password) => {
-    const response = await fetch(`${USER_API_URL}/login`, {
+    return await apiCall(`${USER_API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usernameOrEmail, password }),
     });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Login failed");
-    }
-    return await response.json();
   },
 
   getUserStats: async (userId) => {
-    const response = await fetch(`${USER_API_URL}/${userId}/stats`);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return await apiCall(`${USER_API_URL}/${userId}/stats`);
   },
 };
 
@@ -42,126 +70,77 @@ const convertToFrontendFormat = (backendBoard) => {
     console.warn("Invalid board data, returning empty board");
     return Array(9).fill().map(() => Array(9).fill(null));
   }
-  return backendBoard.map((row) => {
+  for (let r = 0; r < 9; r++) {
+    const row = backendBoard[r];
     if (!Array.isArray(row)) {
       console.warn("Invalid row data, returning empty row");
-      return Array(9).fill(null);
+      backendBoard[r] = Array(9).fill(null);
+    } else {
+      for (let c = 0; c < 9; c++) {
+        if (row[c] === 0) row[c] = null;
+      }
     }
-    return row.map((cell) => (cell === 0 ? null : cell));
-  });
+  }
+  return backendBoard;
+};
+
+const formatGameData = (data) => {
+  if (!data) return data;
+  data.puzzle = convertToFrontendFormat(data.puzzle);
+  data.currentBoard = convertToFrontendFormat(data.currentBoard);
+  data.solution = convertToFrontendFormat(data.solution);
+  return data;
 };
 
 export const gameAPI = {
   startGame: async (difficulty) => {
     const difficultyParam = (difficulty || "MEDIUM").toUpperCase();
-    const response = await fetch(
+    const data = await apiCall(
       `${API_BASE_URL}/start?difficulty=${difficultyParam}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       },
     );
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return {
-      ...data,
-      puzzle: convertToFrontendFormat(data.puzzle),
-      currentBoard: convertToFrontendFormat(data.currentBoard),
-      solution: convertToFrontendFormat(data.solution),
-    };
+    return formatGameData(data);
   },
 
   getGame: async (gameId) => {
-    const response = await fetch(`${API_BASE_URL}/${gameId}`);
-    if (!response.ok) {
-      if (response.status === 404) throw new Error("Game not found");
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return {
-      ...data,
-      puzzle: convertToFrontendFormat(data.puzzle),
-      currentBoard: convertToFrontendFormat(data.currentBoard),
-      solution: convertToFrontendFormat(data.solution),
-    };
+    const data = await apiCall(`${API_BASE_URL}/${gameId}`);
+    return formatGameData(data);
   },
 
   makeMove: async (gameId, row, col, value) => {
-    const response = await fetch(`${API_BASE_URL}/${gameId}/move`, {
+    const data = await apiCall(`${API_BASE_URL}/${gameId}/move`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ row, col, value: value || 0 }),
     });
-    if (!response.ok) {
-      if (response.status === 409) throw new Error("Game already completed");
-      const errorText = await response.text();
-      throw new Error(errorText || `HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return {
-      ...data,
-      puzzle: convertToFrontendFormat(data.puzzle),
-      currentBoard: convertToFrontendFormat(data.currentBoard),
-      solution: convertToFrontendFormat(data.solution),
-    };
+    return formatGameData(data);
   },
 
   undoMove: async (gameId) => {
-    const response = await fetch(`${API_BASE_URL}/${gameId}/undo`, {
+    const data = await apiCall(`${API_BASE_URL}/${gameId}/undo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
-    if (!response.ok) {
-      if (response.status === 400) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "No moves to undo");
-      }
-      if (response.status === 409) throw new Error("Cannot undo - game is completed");
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return {
-      ...data,
-      puzzle: convertToFrontendFormat(data.puzzle),
-      currentBoard: convertToFrontendFormat(data.currentBoard),
-      solution: convertToFrontendFormat(data.solution),
-    };
+    return formatGameData(data);
   },
 
   getHint: async (gameId) => {
-    const response = await fetch(`${API_BASE_URL}/${gameId}/hint`);
-    if (!response.ok) {
-      if (response.status === 404) {
-        const errorText = await response.text();
-        throw new Error(errorText || "No hint available");
-      }
-      if (response.status === 409) throw new Error("Game already completed");
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
+    return await apiCall(`${API_BASE_URL}/${gameId}/hint`);
   },
 
   validateSolution: async (gameId) => {
-    const response = await fetch(`${API_BASE_URL}/${gameId}/validate`, {
+    return await apiCall(`${API_BASE_URL}/${gameId}/validate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     });
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return await response.json();
   },
 
   deleteGame: async (gameId) => {
-    const response = await fetch(`${API_BASE_URL}/${gameId}`, {
+    return await apiCall(`${API_BASE_URL}/${gameId}`, {
       method: "DELETE",
     });
-    if (!response.ok) {
-      if (response.status === 404) throw new Error("Game not found");
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response;
   },
 };

@@ -15,8 +15,7 @@ public class Game {
     @Column(unique = true, nullable = false)
     private String gameId; // Your existing UUID string
 
-    @Column(nullable = false)
-    private Long userId;
+    private Long userId; // nullable – guest games have no associated user
 
     @Column(nullable = false)
     private String difficulty;
@@ -36,6 +35,15 @@ public class Game {
     @Column(nullable = false)
     private Long timeElapsed = 0L; // milliseconds
 
+    @Column(nullable = false)
+    private Long startTime; // System.currentTimeMillis() at game creation
+
+    @Column(columnDefinition = "TEXT")
+    private String moveHistoryJson = "[]"; // JSON array of MoveHistory
+
+    @Column(columnDefinition = "TEXT")
+    private String notesJson; // JSON 9x9 list-of-lists
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private GameStatus status = GameStatus.IN_PROGRESS;
@@ -48,6 +56,7 @@ public class Game {
     // Constructors
     public Game() {
         this.createdAt = LocalDateTime.now();
+        this.startTime = System.currentTimeMillis();
     }
 
     // Getters and Setters
@@ -117,6 +126,30 @@ public class Game {
 
     public Long getTimeElapsed() {
         return timeElapsed;
+    }
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
+    }
+
+    public String getMoveHistoryJson() {
+        return moveHistoryJson;
+    }
+
+    public void setMoveHistoryJson(String moveHistoryJson) {
+        this.moveHistoryJson = moveHistoryJson;
+    }
+
+    public String getNotesJson() {
+        return notesJson;
+    }
+
+    public void setNotesJson(String notesJson) {
+        this.notesJson = notesJson;
     }
 
     public void setTimeElapsed(Long timeElapsed) {

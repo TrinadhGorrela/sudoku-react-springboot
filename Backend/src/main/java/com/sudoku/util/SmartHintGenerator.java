@@ -118,7 +118,7 @@ public class SmartHintGenerator {
         }
 
         for (int i = 1; i <= 9; i++) {
-            if (CompletedBoardGenerator.isSafe(board, row, col, i)) {
+            if (BoardValidator.isValid(board, row, col, i)) {
                 possible.add(i);
             }
         }

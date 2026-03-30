@@ -3,10 +3,10 @@ import { Modal, Button } from "react-bootstrap";
 import Confetti from "react-confetti";
 import {
   calculateScore,
-  formatTime,
   getRankName,
   getGradeColor,
 } from "../../utils/ScoreCalculator";
+import { formatTime } from "../../utils/sudokuHelpers";
 import styles from "./VictoryModal.module.css";
 
 const VictoryModal = ({

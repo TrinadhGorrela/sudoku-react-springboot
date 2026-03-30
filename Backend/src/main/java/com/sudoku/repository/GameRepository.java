@@ -15,6 +15,11 @@ import java.util.Optional;
 public interface GameRepository extends JpaRepository<Game, Long> {
     
     Optional<Game> findByGameId(String gameId);
+
+    boolean existsByGameId(String gameId);
+
+    void deleteByGameId(String gameId);
+
     
     List<Game> findByUserId(Long userId);
     

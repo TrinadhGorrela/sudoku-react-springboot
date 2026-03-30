@@ -1,9 +1,14 @@
 package com.sudoku.service.impl;
 
-import com.sudoku.service.GameService;
 import com.sudoku.dto.GameState;
 import com.sudoku.dto.MoveHistory;
+import com.sudoku.entity.Game;
+import com.sudoku.enums.GameStatus;
+import com.sudoku.mapper.GameMapper;
 import com.sudoku.repository.GameRepository;
+import com.sudoku.service.GameService;
+import com.sudoku.util.BoardUtils;
+import com.sudoku.util.BoardValidator;
 import com.sudoku.util.CompletedBoardGenerator;
 import com.sudoku.util.PuzzleGenerator;
 import com.sudoku.util.SmartHintGenerator;
@@ -11,9 +16,11 @@ import com.sudoku.util.SmartHintGenerator.HintInfo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class GameServiceImpl implements GameService {
@@ -21,109 +28,149 @@ public class GameServiceImpl implements GameService {
     @Autowired
     private GameRepository gameRepository;
 
-    private final Map<String, GameState> activeGames = new ConcurrentHashMap<>();
-    private final CompletedBoardGenerator completedBoardGenerator;
-    private final PuzzleGenerator puzzleGenerator;
+    @Autowired
+    private GameMapper gameMapper;
 
-    public GameServiceImpl() {
-        this.completedBoardGenerator = new CompletedBoardGenerator();
-        this.puzzleGenerator = new PuzzleGenerator();
-    }
+    @Autowired
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    // -------------------------------------------------------------------------
+    // CREATE
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
     public GameState createGame(String difficulty) {
-        int[][] solution = completedBoardGenerator.puzzle();
-        int[][] puzzle = puzzleGenerator.generatePuzzle(solution, difficulty);
+        int[][] solution = CompletedBoardGenerator.puzzle();
+        int[][] puzzle   = PuzzleGenerator.generatePuzzle(solution, difficulty);
 
-        GameState gameState = new GameState();
-        gameState.setGameId(generateGameId());
-        gameState.setPuzzle(puzzle);
-        gameState.setSolution(solution);
-        gameState.setCurrentBoard(copyBoard(puzzle));
-        gameState.setDifficulty(difficulty);
-        gameState.setMistakes(0);
-        gameState.setStartTime(System.currentTimeMillis());
-        gameState.setCompleted(false);
+        Game game = new Game();
+        game.setGameId(generateGameId());
+        game.setDifficulty(difficulty);
+        game.setPuzzleJson(serializeIntArray(puzzle));
+        game.setCurrentBoardJson(serializeIntArray(BoardUtils.copyBoard(puzzle)));
+        game.setSolutionJson(serializeIntArray(solution));
+        game.setMistakes(0);
+        game.setTimeElapsed(0L);
+        game.setStatus(GameStatus.IN_PROGRESS);
+        game.setMoveHistoryJson("[]");
 
-        activeGames.put(gameState.getGameId(), gameState);
-        return gameState;
+        gameRepository.save(game);
+        return gameMapper.toGameState(game);
     }
 
-    public GameState makeMove(String gameId, int row, int col, int value) {
-        GameState game = getGameState(gameId);
-        validateMove(game, row, col, value);
+    // -------------------------------------------------------------------------
+    // READ
+    // -------------------------------------------------------------------------
 
-        int previousValue = game.getCurrentBoard()[row][col];
-        game.getCurrentBoard()[row][col] = value;
+    @Override
+    public GameState getGameState(String gameId) {
+        return gameMapper.toGameState(loadGame(gameId));
+    }
+
+    @Override
+    public boolean gameExists(String gameId) {
+        return gameRepository.existsByGameId(gameId);
+    }
+
+    // -------------------------------------------------------------------------
+    // MOVE
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public GameState makeMove(String gameId, int row, int col, int value) {
+        Game game = loadGame(gameId);
+        GameState state = gameMapper.toGameState(game);
+
+        validateMove(state, row, col, value);
+
+        int previousValue = state.getCurrentBoard()[row][col];
+        state.getCurrentBoard()[row][col] = value;
 
         boolean incrementedMistake = false;
 
-        if (value != 0 && game.getPuzzle()[row][col] == 0) {
-            boolean isWrong = false;
-
-            if (!isMoveValid(game.getCurrentBoard(), row, col, value)) {
-                isWrong = true;
-            } else if (game.getSolution()[row][col] != value) {
-                isWrong = true;
-            }
+        if (value != 0 && state.getPuzzle()[row][col] == 0) {
+            boolean isWrong = !BoardValidator.isValid(state.getCurrentBoard(), row, col, value)
+                           || state.getSolution()[row][col] != value;
 
             if (isWrong) {
                 boolean previousWasAlsoWrong = previousValue != 0
-                        && previousValue != game.getSolution()[row][col];
-
+                        && previousValue != state.getSolution()[row][col];
                 if (previousValue == 0 || !previousWasAlsoWrong) {
-                    game.setMistakes(game.getMistakes() + 1);
+                    state.setMistakes(state.getMistakes() + 1);
                     incrementedMistake = true;
                 }
             }
         }
 
-        game.addMoveToHistory(new MoveHistory(row, col, previousValue, value, incrementedMistake));
+        state.addMoveToHistory(new MoveHistory(row, col, previousValue, value, incrementedMistake));
 
-        if (game.getMistakes() >= 3) {
-            game.setCompleted(true);
-            game.setTimeElapsed(System.currentTimeMillis() - game.getStartTime());
-        } else if (isBoardComplete(game.getCurrentBoard(), game.getSolution())) {
-            game.setCompleted(true);
-            game.setTimeElapsed(System.currentTimeMillis() - game.getStartTime());
+        if (state.getMistakes() >= 3) {
+            state.setCompleted(true);
+            state.setTimeElapsed(System.currentTimeMillis() - state.getStartTime());
+        } else if (isBoardComplete(state.getCurrentBoard(), state.getSolution())) {
+            state.setCompleted(true);
+            state.setTimeElapsed(System.currentTimeMillis() - state.getStartTime());
         }
 
-        return game;
+        gameMapper.updateEntity(game, state);
+        gameRepository.save(game);
+
+        return state;
     }
 
-    public GameState undoMove(String gameId) {
-        GameState game = getGameState(gameId);
+    // -------------------------------------------------------------------------
+    // UNDO
+    // -------------------------------------------------------------------------
 
-        if (game.isCompleted()) {
+    @Override
+    @Transactional
+    public GameState undoMove(String gameId) {
+        Game game = loadGame(gameId);
+        GameState state = gameMapper.toGameState(game);
+
+        if (state.isCompleted()) {
             throw new RuntimeException("Cannot undo - game is completed");
         }
-        if (!game.hasMovesToUndo()) {
-            throw new RuntimeException("No moves to undo");
-        }
-
-        MoveHistory lastMove = game.popLastMove();
+        MoveHistory lastMove = state.popLastMove();
         if (lastMove == null) {
             throw new RuntimeException("No moves to undo");
         }
 
-        game.getCurrentBoard()[lastMove.getRow()][lastMove.getCol()] = lastMove.getPreviousValue();
-        return game;
+        // Roll back mistake counter if that move had incremented it
+        if (lastMove.isIncrementedMistakeCounter() && state.getMistakes() > 0) {
+            state.setMistakes(state.getMistakes() - 1);
+        }
+
+        state.getCurrentBoard()[lastMove.getRow()][lastMove.getCol()] = lastMove.getPreviousValue();
+
+        gameMapper.updateEntity(game, state);
+        gameRepository.save(game);
+
+        return state;
     }
 
-    public SmartHintGenerator.HintInfo getHint(String gameId) {
-        GameState game = getGameState(gameId);
+    // -------------------------------------------------------------------------
+    // HINT
+    // -------------------------------------------------------------------------
 
-        if (game.isCompleted()) {
+    @Override
+    public HintInfo getHint(String gameId) {
+        GameState state = gameMapper.toGameState(loadGame(gameId));
+
+        if (state.isCompleted()) {
             throw new RuntimeException("Game already completed");
         }
 
-        HintInfo hint = SmartHintGenerator.getHint(game.getCurrentBoard());
+        HintInfo hint = SmartHintGenerator.getHint(state.getCurrentBoard());
 
-        if (hint == null || hint.value != game.getSolution()[hint.row][hint.col]) {
+        if (hint == null || hint.value != state.getSolution()[hint.row][hint.col]) {
             for (int i = 0; i < 9; i++) {
                 for (int j = 0; j < 9; j++) {
-                    if (game.getCurrentBoard()[i][j] == 0) {
-                        return new HintInfo(i, j, game.getSolution()[i][j], "Reveal Cell",
-                            "The next correct number for this cell is " + game.getSolution()[i][j]);
+                    if (state.getCurrentBoard()[i][j] == 0) {
+                        return new HintInfo(i, j, state.getSolution()[i][j], "Reveal Cell",
+                            "The next correct number for this cell is " + state.getSolution()[i][j]);
                     }
                 }
             }
@@ -133,63 +180,76 @@ public class GameServiceImpl implements GameService {
         return hint;
     }
 
+    // -------------------------------------------------------------------------
+    // VALIDATE
+    // -------------------------------------------------------------------------
+
+    @Override
     public boolean validateSolution(String gameId) {
-        GameState game = getGameState(gameId);
-        return isBoardComplete(game.getCurrentBoard(), game.getSolution());
+        GameState state = gameMapper.toGameState(loadGame(gameId));
+        return isBoardComplete(state.getCurrentBoard(), state.getSolution());
     }
 
-    public GameState getGameState(String gameId) {
-        GameState game = activeGames.get(gameId);
-        if (game == null) {
-            throw new RuntimeException("Game not found: " + gameId);
-        }
-        return game;
+    // -------------------------------------------------------------------------
+    // NOTES
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public GameState saveNotes(String gameId, List<List<List<Integer>>> notes) {
+        Game game = loadGame(gameId);
+        GameState state = gameMapper.toGameState(game);
+        state.setNotes(notes);
+        gameMapper.updateEntity(game, state);
+        gameRepository.save(game);
+        return state;
     }
 
+    // -------------------------------------------------------------------------
+    // DELETE
+    // -------------------------------------------------------------------------
+
+    @Override
+    @Transactional
     public void deleteGame(String gameId) {
-        activeGames.remove(gameId);
+        gameRepository.deleteByGameId(gameId);
     }
 
-    public boolean gameExists(String gameId) {
-        return activeGames.containsKey(gameId);
-    }
+    // -------------------------------------------------------------------------
+    // CLEANUP
+    // -------------------------------------------------------------------------
 
+    @Override
+    @Transactional
     public void cleanupOldGames(long timeoutHours) {
-        long cutoffTime = System.currentTimeMillis() - (timeoutHours * 60 * 60 * 1000);
-        activeGames.entrySet().removeIf(entry -> entry.getValue().getStartTime() < cutoffTime);
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(timeoutHours);
+        List<Game> oldGames = gameRepository.findOldInProgressGames(cutoff);
+        for (Game g : oldGames) {
+            g.setStatus(GameStatus.ABANDONED);
+        }
+        gameRepository.saveAll(oldGames);
+    }
+
+    // =========================================================================
+    // Private helpers
+    // =========================================================================
+
+    private Game loadGame(String gameId) {
+        return gameRepository.findByGameId(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found: " + gameId));
     }
 
     private void validateMove(GameState game, int row, int col, int value) {
-        if (game.isCompleted()) throw new RuntimeException("Game already completed");
+        if (game.isCompleted())                throw new RuntimeException("Game already completed");
         if (row < 0 || row > 8 || col < 0 || col > 8) throw new RuntimeException("Invalid cell position");
-        if (value < 0 || value > 9) throw new RuntimeException("Value must be between 0 and 9");
-        if (game.getPuzzle()[row][col] != 0) throw new RuntimeException("Cannot modify original puzzle clue");
-    }
-
-    private boolean isMoveValid(int[][] board, int row, int col, int value) {
-        if (value == 0) return true;
-        for (int i = 0; i < 9; i++) {
-            if (i != col && board[row][i] == value) return false;
-            if (i != row && board[i][col] == value) return false;
-        }
-        int boxRow = row - row % 3;
-        int boxCol = col - col % 3;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                int r = boxRow + i;
-                int c = boxCol + j;
-                if ((r != row || c != col) && board[r][c] == value) return false;
-            }
-        }
-        return true;
+        if (value < 0 || value > 9)            throw new RuntimeException("Value must be between 0 and 9");
+        if (game.getPuzzle()[row][col] != 0)   throw new RuntimeException("Cannot modify original puzzle clue");
     }
 
     private boolean isBoardComplete(int[][] currentBoard, int[][] solution) {
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 9; j++) {
+        for (int i = 0; i < 9; i++)
+            for (int j = 0; j < 9; j++)
                 if (currentBoard[i][j] == 0 || currentBoard[i][j] != solution[i][j]) return false;
-            }
-        }
         return true;
     }
 
@@ -197,11 +257,15 @@ public class GameServiceImpl implements GameService {
         return UUID.randomUUID().toString().substring(0, 8);
     }
 
-    private int[][] copyBoard(int[][] original) {
-        int[][] copy = new int[9][9];
-        for (int i = 0; i < 9; i++) {
-            System.arraycopy(original[i], 0, copy[i], 0, 9);
+    /**
+     * Thin helper used only during createGame before a full GameState exists.
+     * All other serialization goes through GameMapper.
+     */
+    private String serializeIntArray(int[][] board) {
+        try {
+            return objectMapper.writeValueAsString(board);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize board", e);
         }
-        return copy;
     }
 }

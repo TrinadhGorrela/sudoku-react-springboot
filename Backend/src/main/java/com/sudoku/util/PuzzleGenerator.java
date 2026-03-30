@@ -5,7 +5,7 @@ import java.util.*;
 public class PuzzleGenerator {
 
     public static int[][] generatePuzzle(int[][] solvedBoard, String difficulty) {
-        int[][] puzzle = copyBoard(solvedBoard);
+        int[][] puzzle = BoardUtils.copyBoard(solvedBoard);
         int targetCellsToRemove = getTargetCells(difficulty);
         List<int[]> positions = getAllPositionsRandomized();
         int cellsRemoved = 0;
@@ -66,7 +66,7 @@ public class PuzzleGenerator {
     }
 
     public static boolean hasUniqueSolution(int[][] puzzle) {
-        int[][] boardCopy = copyBoard(puzzle);
+        int[][] boardCopy = BoardUtils.copyBoard(puzzle);
         int solutionCount = countSolutionsLimited(boardCopy, 2);
         return solutionCount == 1;
     }
@@ -93,7 +93,7 @@ public class PuzzleGenerator {
         int solutionCount = 0;
 
         for (int num = 1; num <= 9; num++) {
-            if (canPlaceNumber(board, emptyRow, emptyCol, num)) {
+            if (BoardValidator.isValid(board, emptyRow, emptyCol, num)) {
                 board[emptyRow][emptyCol] = num;
                 solutionCount += countSolutionsLimited(board, limit);
                 board[emptyRow][emptyCol] = 0;
@@ -106,26 +106,7 @@ public class PuzzleGenerator {
         return solutionCount;
     }
 
-    private static boolean canPlaceNumber(int[][] board, int row, int col, int num) {
-        for (int i = 0; i < 9; i++) {
-            if (board[row][i] == num || board[i][col] == num) {
-                return false;
-            }
-        }
 
-        int boxStartRow = row - row % 3;
-        int boxStartCol = col - col % 3;
-        
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                if (board[boxStartRow + i][boxStartCol + j] == num) {
-                    return false;
-                }
-            }
-        }
-        
-        return true;
-    }
 
     private static int[][] attemptAdditionalRemovals(int[][] puzzle, int[][] solvedBoard, 
                                                     int remainingToRemove) {
@@ -135,7 +116,7 @@ public class PuzzleGenerator {
 
         List<int[]> positions = getAllPositionsRandomized();
         int cellsRemoved = 0;
-        int[][] currentPuzzle = copyBoard(puzzle);
+        int[][] currentPuzzle = BoardUtils.copyBoard(puzzle);
         
         for (int[] pos : positions) {
             if (cellsRemoved >= remainingToRemove) {
@@ -162,16 +143,10 @@ public class PuzzleGenerator {
         return currentPuzzle;
     }
 
-    private static int[][] copyBoard(int[][] original) {
-        int[][] copy = new int[9][9];
-        for (int i = 0; i < 9; i++) {
-            System.arraycopy(original[i], 0, copy[i], 0, 9);
-        }
-        return copy;
-    }
+
 
     public static int[][] generateSymmetricalPuzzle(int[][] solvedBoard, String difficulty) {
-        int[][] puzzle = copyBoard(solvedBoard);
+        int[][] puzzle = BoardUtils.copyBoard(solvedBoard);
         int targetCells = getTargetCells(difficulty) / 2;
         
         List<int[]> symmetricalPairs = generateSymmetricalPairs();

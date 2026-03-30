@@ -21,7 +21,7 @@ export const calculateScore = (
   const base = basePoints[difficulty.toUpperCase()] || 2000;
 
   // Time bonus (faster = more points)
-  const timeInSeconds = Math.floor(timeElapsed / 1000);
+  const timeInSeconds = timeElapsed;
   const timeBonus = calculateTimeBonus(difficulty, timeInSeconds);
 
   // Mistake penalty (-100 per mistake)
@@ -113,18 +113,6 @@ const calculateStars = (mistakes, hintsUsed) => {
   if (mistakes === 0 && hintsUsed === 0) return 3; // Perfect
   if (mistakes <= 2 && hintsUsed <= 1) return 2; // Great
   return 1; // Good
-};
-
-/**
- * Format time in MM:SS
- */
-export const formatTime = (milliseconds) => {
-  const seconds = Math.floor(milliseconds / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${minutes.toString().padStart(2, "0")}:${secs
-    .toString()
-    .padStart(2, "0")}`;
 };
 
 /**

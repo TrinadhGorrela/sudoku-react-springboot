@@ -11,7 +11,9 @@ public interface GameService {
     SmartHintGenerator.HintInfo getHint(String gameId);
     boolean validateSolution(String gameId);
     GameState getGameState(String gameId);
+    GameState saveNotes(String gameId, java.util.List<java.util.List<java.util.List<Integer>>> notes);
     void deleteGame(String gameId);
     boolean gameExists(String gameId);
     void cleanupOldGames(long timeoutHours);
 }
+

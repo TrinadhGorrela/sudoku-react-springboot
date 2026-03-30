@@ -4,12 +4,19 @@ import {
   loadGameState,
   clearGameState,
 } from "../utils/sudokuHelpers";
+import { storageManager } from "../utils/storageManager";
 import { gameAPI } from "../services/api";
 
+const EMPTY_NOTES_TEMPLATE = Array(9)
+  .fill(null)
+  .map(() =>
+    Array(9)
+      .fill(null)
+      .map(() => []),
+  );
+
 const getEmptyNotes = () => {
-  return Array(9)
-    .fill(null)
-    .map(() => Array(9).fill(null).map(() => []));
+  return EMPTY_NOTES_TEMPLATE.map((row) => row.map((cell) => [...cell]));
 };
 
 const MAX_HINTS = 3;
@@ -20,73 +27,46 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   const [mistakes, setMistakes] = useState(0);
   const [time, setTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [hasGameStarted, setHasGameStarted] = useState(false);
+
   const [gameId, setGameId] = useState(null);
   const [board, setBoard] = useState([]);
   const [puzzle, setPuzzle] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [solution, setSolution] = useState([]);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [errorCells, setErrorCells] = useState(new Set());
+  const isCompleted = mistakes >= 3 || (board.length > 0 && board.every((row, r) => row.every((val, c) => val !== null && val !== 0 && val === solution[r]?.[c])));
   const [isNoteMode, setIsNoteMode] = useState(false);
-  const [notes, setNotes] = useState(getEmptyNotes());
+  const [notes, setNotes] = useState(getEmptyNotes);
   const [hintInfo, setHintInfo] = useState(null);
   const [highlightedCell, setHighlightedCell] = useState(null);
   const [hintsUsed, setHintsUsed] = useState(0);
 
   const saveNotesToStorage = (notesData) => {
-    try {
-      localStorage.setItem("sudokuNotes", JSON.stringify(notesData));
-    } catch (error) {
-      console.error("Failed to save notes to localStorage:", error);
-    }
+    storageManager.save("sudokuNotes", notesData);
   };
 
   const saveHintToStorage = (hint, highlighted) => {
-    try {
-      if (hint && highlighted) {
-        localStorage.setItem(
-          "sudokuHint",
-          JSON.stringify({ hint, highlighted }),
-        );
-      } else {
-        localStorage.removeItem("sudokuHint");
-      }
-    } catch (error) {
-      console.error("Failed to save hint to localStorage:", error);
+    if (hint && highlighted) {
+      storageManager.save("sudokuHint", { hint, highlighted });
+    } else {
+      storageManager.remove("sudokuHint");
     }
   };
 
   const loadHintFromStorage = () => {
-    try {
-      const savedHint = localStorage.getItem("sudokuHint");
-      if (savedHint) {
-        const { hint, highlighted } = JSON.parse(savedHint);
-        return { hint, highlighted };
-      }
-    } catch (error) {
-      console.error("Failed to load hint from localStorage:", error);
+    const savedHint = storageManager.load("sudokuHint", null);
+    if (savedHint) {
+      return savedHint;
     }
     return { hint: null, highlighted: null };
   };
 
   const saveHintsUsedToStorage = (count) => {
-    try {
-      localStorage.setItem("sudokuHintsUsed", count.toString());
-    } catch (error) {
-      console.error("Failed to save hints used to localStorage:", error);
-    }
+    storageManager.save("sudokuHintsUsed", count);
   };
 
   const loadHintsUsedFromStorage = () => {
-    try {
-      const savedHints = localStorage.getItem("sudokuHintsUsed");
-      return savedHints ? parseInt(savedHints, 10) : 0;
-    } catch (error) {
-      console.error("Failed to load hints used from localStorage:", error);
-      return 0;
-    }
+    return storageManager.load("sudokuHintsUsed", 0);
   };
 
   const clearRelatedNotes = (rowIdx, colIdx, value) => {
@@ -127,9 +107,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setHintsUsed(0);
       saveHintsUsedToStorage(0);
       setIsTimerRunning(true);
-      setHasGameStarted(true);
       setSelected(null);
-      setIsCompleted(false);
       setSolution(gameData.solution);
       const emptyNotes = getEmptyNotes();
       setNotes(emptyNotes);
@@ -182,8 +160,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       saveHintToStorage(null, null);
     }
 
-    if (!hasGameStarted && value !== null) {
-      setHasGameStarted(true);
+    if (time === 0 && !isTimerRunning && mistakes === 0 && value !== null) {
       setIsTimerRunning(true);
     }
 
@@ -193,9 +170,8 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setMistakes(gameData.mistakes || 0);
       setSolution(gameData.solution);
       saveGameState(gameData.gameId, difficulty, time, isTimerRunning, gameData.currentBoard, puzzle);
-      localStorage.setItem("sudokuBoard", JSON.stringify(gameData.currentBoard));
+      storageManager.save("sudokuBoard", gameData.currentBoard);
       if (gameData.completed || gameData.mistakes >= 3) {
-        setIsCompleted(true);
         setIsTimerRunning(false);
         setHighlightedCell(null);
         setHintInfo(null);
@@ -221,7 +197,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setBoard(gameData.currentBoard);
       setMistakes(gameData.mistakes || 0);
       setSolution(gameData.solution);
-      localStorage.setItem("sudokuBoard", JSON.stringify(gameData.currentBoard));
+      storageManager.save("sudokuBoard", gameData.currentBoard);
       saveGameState(gameData.gameId, difficulty, time, isTimerRunning, gameData.currentBoard, puzzle);
       setHighlightedCell(null);
       setHintInfo(null);
@@ -289,9 +265,8 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setMistakes(gameData.mistakes || 0);
       setSolution(gameData.solution);
       saveGameState(gameData.gameId, difficulty, time, isTimerRunning, gameData.currentBoard, puzzle);
-      localStorage.setItem("sudokuBoard", JSON.stringify(gameData.currentBoard));
+      storageManager.save("sudokuBoard", gameData.currentBoard);
       if (gameData.completed || gameData.mistakes >= 3) {
-        setIsCompleted(true);
         setIsTimerRunning(false);
       }
     } catch (error) {
@@ -311,18 +286,18 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
 
   const handleNewGame = () => {
     clearGameState();
-    localStorage.removeItem("sudokuNotes");
-    localStorage.removeItem("sudokuHint");
-    localStorage.removeItem("sudokuHintsUsed");
+    storageManager.remove("sudokuNotes");
+    storageManager.remove("sudokuHint");
+    storageManager.remove("sudokuHintsUsed");
     loadGame(difficulty);
   };
 
   const handleDifficultyChange = (newDifficulty) => {
     setDifficulty(newDifficulty);
     clearGameState();
-    localStorage.removeItem("sudokuNotes");
-    localStorage.removeItem("sudokuHint");
-    localStorage.removeItem("sudokuHintsUsed");
+    storageManager.remove("sudokuNotes");
+    storageManager.remove("sudokuHint");
+    storageManager.remove("sudokuHintsUsed");
     loadGame(newDifficulty);
   };
 
@@ -339,20 +314,14 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setPuzzle(gameData.puzzle);
       setMistakes(gameData.mistakes);
       setSolution(gameData.solution);
-      setIsCompleted(false);
       const savedState = loadGameState();
       if (savedState.time) setTime(savedState.time);
       if (savedState.timerRunning) setIsTimerRunning(true);
-      const savedBoard = localStorage.getItem("sudokuBoard");
-      if (savedBoard) setBoard(JSON.parse(savedBoard));
-      const savedNotes = localStorage.getItem("sudokuNotes");
+      const savedBoard = storageManager.load("sudokuBoard", null);
+      if (savedBoard) setBoard(savedBoard);
+      const savedNotes = storageManager.load("sudokuNotes", null);
       if (savedNotes) {
-        try {
-          setNotes(JSON.parse(savedNotes));
-        } catch (e) {
-          console.error("Failed to parse saved notes:", e);
-          setNotes(getEmptyNotes());
-        }
+        setNotes(savedNotes);
       } else {
         setNotes(getEmptyNotes());
       }
@@ -389,8 +358,8 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   };
 
   useEffect(() => {
-    const savedGameId = localStorage.getItem("sudokuGameId");
-    const savedDifficulty = localStorage.getItem("sudokuDifficulty") || "MEDIUM";
+    const savedGameId = storageManager.load("sudokuGameId", null);
+    const savedDifficulty = storageManager.load("sudokuDifficulty", "MEDIUM");
     if (savedGameId) {
       loadExistingGame(savedGameId, savedDifficulty);
       setDifficulty(savedDifficulty);
@@ -411,26 +380,14 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   }, [isTimerRunning]);
 
   useEffect(() => {
-    if (gameId) localStorage.setItem("sudokuTime", time.toString());
+    if (gameId) storageManager.save("sudokuTime", time);
   }, [time, gameId]);
 
   useEffect(() => {
-    if (gameId) localStorage.setItem("sudokuTimerRunning", isTimerRunning.toString());
+    if (gameId) storageManager.save("sudokuTimerRunning", isTimerRunning);
   }, [isTimerRunning, gameId]);
 
-  useEffect(() => {
-    const errors = new Set();
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        const value = board[row]?.[col];
-        const correct = solution[row]?.[col];
-        if (value !== null && value !== undefined && value !== correct) {
-          errors.add(`${row}-${col}`);
-        }
-      }
-    }
-    setErrorCells(errors);
-  }, [board, solution]);
+
 
   return {
     selected,
@@ -439,7 +396,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     mistakes,
     time,
     isTimerRunning,
-    hasGameStarted,
     gameId,
     board,
     puzzle,
@@ -451,7 +407,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     isNoteMode,
     hintInfo,
     highlightedCell,
-    errorCells,
     hintsUsed,
     maxHints: MAX_HINTS,
     loadGame,

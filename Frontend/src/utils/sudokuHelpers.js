@@ -1,3 +1,5 @@
+import { storageManager } from "./storageManager";
+
 // ============ VALIDATION HELPERS ============
 
 /**
@@ -77,19 +79,15 @@ export const saveGameState = (
   board,
   puzzle,
 ) => {
-  try {
-    localStorage.setItem("sudokuGameId", gameId);
-    localStorage.setItem("sudokuDifficulty", difficulty);
-    localStorage.setItem("sudokuTime", time.toString());
-    localStorage.setItem("sudokuTimerRunning", timerRunning.toString());
+  storageManager.save("sudokuGameId", gameId);
+  storageManager.save("sudokuDifficulty", difficulty);
+  storageManager.save("sudokuTime", time);
+  storageManager.save("sudokuTimerRunning", timerRunning);
 
-    // Optional: Save board state for quick restore
-    if (board && puzzle) {
-      localStorage.setItem("sudokuBoard", JSON.stringify(board));
-      localStorage.setItem("sudokuPuzzle", JSON.stringify(puzzle));
-    }
-  } catch (error) {
-    console.error("Failed to save game state:", error);
+  // Optional: Save board state for quick restore
+  if (board && puzzle) {
+    storageManager.save("sudokuBoard", board);
+    storageManager.save("sudokuPuzzle", puzzle);
   }
 };
 
@@ -97,19 +95,14 @@ export const saveGameState = (
  * Load game state from localStorage
  */
 export const loadGameState = () => {
-  try {
-    return {
-      gameId: localStorage.getItem("sudokuGameId"),
-      difficulty: localStorage.getItem("sudokuDifficulty") || "MEDIUM",
-      time: parseInt(localStorage.getItem("sudokuTime") || "0"),
-      timerRunning: localStorage.getItem("sudokuTimerRunning") === "true",
-      board: JSON.parse(localStorage.getItem("sudokuBoard") || "null"),
-      puzzle: JSON.parse(localStorage.getItem("sudokuPuzzle") || "null"),
-    };
-  } catch (error) {
-    console.error("Failed to load game state:", error);
-    return {};
-  }
+  return {
+    gameId: storageManager.load("sudokuGameId", null),
+    difficulty: storageManager.load("sudokuDifficulty", "MEDIUM"),
+    time: storageManager.load("sudokuTime", 0),
+    timerRunning: storageManager.load("sudokuTimerRunning", false),
+    board: storageManager.load("sudokuBoard", null),
+    puzzle: storageManager.load("sudokuPuzzle", null),
+  };
 };
 
 /**
@@ -125,5 +118,5 @@ export const clearGameState = () => {
     "sudokuPuzzle",
   ];
 
-  keys.forEach((key) => localStorage.removeItem(key));
+  keys.forEach((key) => storageManager.remove(key));
 };
