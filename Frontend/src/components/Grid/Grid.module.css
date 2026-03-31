@@ -210,20 +210,15 @@
   display: none !important;
 }
 
-/* Make notes more visible in selected cells */
 .selectedCell .notesGrid .noteNumber:not(:empty) {
   color: #1e3a5f;
   font-weight: 700;
 }
 
-/* Make notes visible in related cells */
 .relatedCell .notesGrid .noteNumber:not(:empty) {
   color: #4169e1;
 }
 
-/* Add to Grid.module.css */
-
-/* Hint cell styling */
 .cell.highlighted {
   position: relative;
   background: linear-gradient(
@@ -282,7 +277,6 @@
   }
 }
 
-/* Ensure the cell content is positioned relatively for absolute positioning */
 .cellContent {
   position: relative;
   width: 100%;
@@ -292,12 +286,10 @@
   justify-content: center;
 }
 
-/* Adjust input styling for better hint visibility */
 .input.hintHighlighted {
   transition: all 0.3s ease;
 }
 
-/* Make sure the hint styling doesn't conflict with other states */
 .input.hintHighlighted.selectedCell {
   border-color: #4a6fa5;
   box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.5);

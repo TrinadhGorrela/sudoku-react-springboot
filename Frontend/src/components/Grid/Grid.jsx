@@ -49,10 +49,9 @@ const Grid = ({
                 const hasError = isError(rIdx, cIdx);
                 const currentCellNotes = notes?.[rIdx]?.[cIdx] || [];
 
-                // Simplified: combine both conditions
                 const isHighlightedCell =
                   isHintCell(rIdx, cIdx) || isHighlighted(rIdx, cIdx);
-                const isHintHighlighted = isHintCell(rIdx, cIdx); // Keep separate for sparkle
+                const isHintHighlighted = isHintCell(rIdx, cIdx);
 
                 return (
                   <td

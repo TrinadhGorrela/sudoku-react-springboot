@@ -3,7 +3,7 @@ package com.sudoku.util;
 import java.util.*;
 
 public class CompletedBoardGenerator {
-    
+
     public static int[][] puzzle() {
         int[][] board = new int[9][9];
 
@@ -12,7 +12,6 @@ public class CompletedBoardGenerator {
         } else {
             return null;
         }
-
     }
 
     public static boolean solver(int[][] board, int n) {
@@ -53,7 +52,4 @@ public class CompletedBoardGenerator {
 
         return false;
     }
-
-
-
 }

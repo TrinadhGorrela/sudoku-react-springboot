@@ -6,9 +6,11 @@ const HintModal = ({ show, hintInfo, onHintAccept, onHintDismiss }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
-    if (show) {
-      setCurrentSlide(0);
-    }
+    if (!show || !hintInfo) return;
+
+    // Reset asynchronously to avoid "setState in effect" warnings.
+    const t = setTimeout(() => setCurrentSlide(0), 0);
+    return () => clearTimeout(t);
   }, [show, hintInfo]);
 
   if (!show || !hintInfo) return null;

@@ -50,7 +50,7 @@
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 20px;
-  padding-right: 20px; /* Space for close button */
+  padding-right: 20px;
 }
 
 .hintIcon {

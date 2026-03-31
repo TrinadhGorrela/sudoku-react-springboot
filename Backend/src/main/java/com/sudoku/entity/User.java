@@ -25,7 +25,6 @@ public class User {
 
     private String passwordHash;
 
-    // Statistics
     @Column(nullable = false)
     private Integer totalGamesPlayed = 0;
 
@@ -47,13 +46,11 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime lastActive;
 
-    // Constructors
     public User() {
         this.createdAt = LocalDateTime.now();
         this.lastActive = LocalDateTime.now();
     }
 
-    // Helper method for display name
     public String getDisplayName() {
         if (userType == UserType.REGISTERED && username != null) {
             return username;
@@ -61,7 +58,6 @@ public class User {
         return "Player #" + id;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

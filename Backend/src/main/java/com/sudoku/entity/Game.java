@@ -13,15 +13,16 @@ public class Game {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String gameId; // Your existing UUID string
+    private String gameId; 
 
-    private Long userId; // nullable – guest games have no associated user
+    @Column(name = "user_id")
+    private Long userId = 0L;
 
     @Column(nullable = false)
     private String difficulty;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String puzzleJson; // Store 2D array as JSON string
+    private String puzzleJson;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String currentBoardJson;
@@ -33,16 +34,16 @@ public class Game {
     private Integer mistakes = 0;
 
     @Column(nullable = false)
-    private Long timeElapsed = 0L; // milliseconds
+    private Long timeElapsed = 0L;
 
     @Column(nullable = false)
-    private Long startTime; // System.currentTimeMillis() at game creation
+    private Long startTime;
 
     @Column(columnDefinition = "TEXT")
-    private String moveHistoryJson = "[]"; // JSON array of MoveHistory
+    private String moveHistoryJson = "[]";
 
     @Column(columnDefinition = "TEXT")
-    private String notesJson; // JSON 9x9 list-of-lists
+    private String notesJson;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -53,13 +54,11 @@ public class Game {
 
     private LocalDateTime completedAt;
 
-    // Constructors
     public Game() {
         this.createdAt = LocalDateTime.now();
         this.startTime = System.currentTimeMillis();
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }

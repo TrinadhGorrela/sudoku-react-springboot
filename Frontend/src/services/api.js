@@ -2,45 +2,59 @@ const API_BASE_URL = "/api/game";
 const USER_API_URL = "/api/user";
 
 async function apiCall(url, options = {}) {
-  const response = await fetch(url, options);
+  try {
+    const response = await fetch(url, options);
 
-  if (!response.ok) {
-    let errorData = {};
-    try {
-      errorData = await response.clone().json();
-    } catch {
+    if (!response.ok) {
+      let errorData = {};
       try {
-        const text = await response.clone().text();
-        if (text) errorData = { message: text };
-      } catch {}
+        errorData = await response.clone().json();
+      } catch {
+        try {
+          const text = await response.clone().text();
+          if (text) errorData = { message: text };
+        } catch {
+          void 0;
+        }
+      }
+
+      const errorMsg = errorData.message || errorData.error;
+
+      if (response.status === 404 && url.includes("/hint")) {
+        throw new Error(errorMsg || "No hint available");
+      }
+      if (response.status === 404) {
+        throw new Error(errorMsg || "Game not found");
+      }
+      if (response.status === 409 && url.includes("/undo")) {
+        throw new Error(errorMsg || "Cannot undo - game is completed");
+      }
+      if (response.status === 409) {
+        throw new Error(errorMsg || "Game already completed");
+      }
+      if (response.status === 400 && url.includes("/undo")) {
+        throw new Error(errorMsg || "No moves to undo");
+      }
+
+      throw new Error(errorMsg || `HTTP error! status: ${response.status}`);
     }
 
-    const errorMsg = errorData.message || errorData.error;
-
-    if (response.status === 404 && url.includes("/hint")) {
-      throw new Error(errorMsg || "No hint available");
-    }
-    if (response.status === 404) {
-      throw new Error(errorMsg || "Game not found");
-    }
-    if (response.status === 409 && url.includes("/undo")) {
-      throw new Error(errorMsg || "Cannot undo - game is completed");
-    }
-    if (response.status === 409) {
-      throw new Error(errorMsg || "Game already completed");
-    }
-    if (response.status === 400 && url.includes("/undo")) {
-      throw new Error(errorMsg || "No moves to undo");
+    if (response.status === 204 || options.method === "DELETE") {
+      return response;
     }
 
-    throw new Error(errorMsg || `HTTP error! status: ${response.status}`);
+    return await response.json();
+  } catch (error) {
+    if (
+      error.message.includes("Failed to fetch") ||
+      error.message.includes("NetworkError")
+    ) {
+      throw new Error(
+        "Backend server is not running. Please start the backend on port 8080.",
+      );
+    }
+    throw error;
   }
-
-  if (response.status === 204 || options.method === "DELETE") {
-    return response;
-  }
-
-  return await response.json();
 }
 
 export const userAPI = {
@@ -68,7 +82,9 @@ export const userAPI = {
 const convertToFrontendFormat = (backendBoard) => {
   if (!backendBoard || !Array.isArray(backendBoard)) {
     console.warn("Invalid board data, returning empty board");
-    return Array(9).fill().map(() => Array(9).fill(null));
+    return Array(9)
+      .fill()
+      .map(() => Array(9).fill(null));
   }
   for (let r = 0; r < 9; r++) {
     const row = backendBoard[r];

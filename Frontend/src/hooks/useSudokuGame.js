@@ -27,7 +27,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   const [mistakes, setMistakes] = useState(0);
   const [time, setTime] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-
   const [gameId, setGameId] = useState(null);
   const [board, setBoard] = useState([]);
   const [puzzle, setPuzzle] = useState([]);
@@ -221,7 +220,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     try {
       const hintData = await gameAPI.getHint(gameId);
       if (hintData && hintData.row !== undefined && hintData.col !== undefined) {
-        // Always use the locally-known solution value — corrects any wrong value from backend.
         const correctValue = solution[hintData.row][hintData.col];
         const cellKey = `${hintData.row}-${hintData.col}`;
         const newHintInfo = {
@@ -386,8 +384,6 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   useEffect(() => {
     if (gameId) storageManager.save("sudokuTimerRunning", isTimerRunning);
   }, [isTimerRunning, gameId]);
-
-
 
   return {
     selected,

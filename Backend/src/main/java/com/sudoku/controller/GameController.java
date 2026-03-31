@@ -1,12 +1,10 @@
 package com.sudoku.controller;
 
 import java.util.*;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import com.sudoku.dto.response.GameResponse;
 import com.sudoku.dto.GameState;
 import com.sudoku.dto.response.HintResponse;
@@ -19,21 +17,26 @@ import com.sudoku.util.SmartHintGenerator;
 
 @RestController
 @RequestMapping("/api/game")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000",
+        "http://localhost:5174" }, allowCredentials = "true")
 public class GameController {
 
     @Autowired
     private GameService gameService;
 
     @PostMapping("/start")
-    public ResponseEntity<GameResponse> startGame(
+    public ResponseEntity<?> startGame(
             @RequestParam(defaultValue = "MEDIUM") String difficulty) {
         try {
             Difficulty difficultyEnum = Difficulty.fromString(difficulty);
             GameState gameState = gameService.createGame(difficultyEnum.getValue());
             return ResponseEntity.ok(new GameResponse(gameState));
         } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of("error", e.getClass().getSimpleName(), "message", e.getMessage() != null ? e.getMessage() : "null", "cause", e.getCause() != null ? e.getCause().getMessage() : "null"));
+            Map<String, Object> errorMap = new HashMap<>();
+            errorMap.put("error", e.getClass().getSimpleName());
+            errorMap.put("message", e.getMessage() != null ? e.getMessage() : "null");
+            errorMap.put("cause", e.getCause() != null ? e.getCause().getMessage() : "null");
+            return ResponseEntity.internalServerError().body(errorMap);
         }
     }
 
@@ -111,7 +114,6 @@ public class GameController {
             return ResponseEntity.badRequest().build();
         }
     }
-
 
     @GetMapping("/{gameId}/hint")
     public ResponseEntity<?> getHint(@PathVariable String gameId) {

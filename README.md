@@ -1,22 +1,21 @@
 # Sudoku Full-Stack Application
 
-A comprehensive, full-stack Sudoku web application featuring user authentication, game state management, and a global leaderboard. Built with a modern React frontend and a robust Spring Boot backend.
+A comprehensive, full-stack Sudoku web application featuring user authentication, game state management, and persistent gameplay data. Built with a modern React frontend and a robust Spring Boot backend.
 
 ##  Features
 
-- **Interactive Sudoku Game**: Play classic Sudoku with real-time validation of moves.
-- **User Authentication**: Secure user registration, login, and profile management.
-- **Game State Management**: Start new games, resume ongoing ones, and track progress.
-- **Global Leaderboard**: Compete with other players and see your ranking based on scores and completion times.
-- **Responsive Design**: Play on any device, gracefully styled using Bootstrap.
+- **Interactive Sudoku Game**: Play classic Sudoku with move validation, undo, hints, and win detection.
+- **User Authentication**: User registration and login, plus game statistics (`/api/user/{userId}/stats`).
+- **Game State Management**: Start new games, resume stored games, and track progress (board, mistakes, notes).
+- **Responsive Design**: Styled with Bootstrap/React-Bootstrap to work on different screen sizes.
 
 ##  Technology Stack
 
 ### Frontend
-- **React 19** with **Vite** for blazing fast development and optimized builds.
-- **Axios** for API communication.
+- **React 19** with **Vite** for fast development and optimized builds.
+- **Fetch API** for communicating with the backend (Vite proxy forwards `/api/*` to Spring Boot).
 - **Bootstrap** & **React-Bootstrap** for styling and responsive UI.
-- **React-Confetti** for celebration animations upon winning.
+- **React-Confetti** for celebration animations upon winning (when enabled in the UI).
 
 ### Backend
 - **Java 17** & **Spring Boot 3.5.5** for the robust API layer.
@@ -75,16 +74,54 @@ Before you begin, ensure you have met the following requirements:
 
 ##  Project Structure
 
-The repository is organized into two main parts as a monorepo:
+The repository is organized into two main parts (monorepo):
 
-- `/Backend`: Contains the Spring Boot Java application (Controllers, Services, Repositories, Entities).
-- `/Frontend`: Contains the React application (Components, Pages, API services, Styles).
+- `/Backend`: Spring Boot REST API + MySQL persistence
+- `/Frontend`: React + Vite UI that calls the backend via `/api/*`
+
+### Directory Layout
+
+```text
+Sudoku/
+  Backend/
+    src/main/java/com/sudoku/
+      controller/   (REST endpoints: /api/game, /api/user)
+      service/      (game + user business logic)
+      repository/   (JPA repositories)
+      entity/       (JPA entities mapped to MySQL tables)
+      dto/           (request/response models)
+      mapper/        (maps entities <-> DTO/state)
+      util/          (board generation/validation helpers)
+      config/        (CORS / web configuration)
+    src/main/resources/
+      application.properties (MySQL credentials + server port)
+    mvnw.cmd / mvnw (Maven wrapper)
+
+  Frontend/
+    src/
+      components/  (React components + modals)
+      hooks/       (custom React hooks, e.g. useSudokuGame.js)
+      services/    (API client: api.js)
+      utils/       (helpers: scoring, storage)
+      App.jsx, main.jsx
+    vite.config.js (dev server + proxy for /api -> http://localhost:8080)
+    package.json
+```
 
 ##  Key API Endpoints
+- **User APIs (`/api/user`)**
+  - `POST /api/user/register` - register a new user
+  - `POST /api/user/login` - login and return user info
+  - `GET /api/user/{userId}/stats` - retrieve user statistics
 
-- **Users (`/api/users` or similar)**: Registration, login, profile retrieval.
-- **Game (`/api/games` or similar)**: Creating game sessions, making moves, fetching board state.
-- **Leaderboard (`/api/leaderboard` or similar)**: Retrieving top scores and rankings.
+- **Game APIs (`/api/game`)**
+  - `POST /api/game/start?difficulty=MEDIUM` - create a new Sudoku game
+  - `GET /api/game/{gameId}` - get current puzzle/board state
+  - `POST /api/game/{gameId}/move` - place a number in a cell
+  - `POST /api/game/{gameId}/undo` - undo last move
+  - `GET /api/game/{gameId}/hint` - get a hint for the current board
+  - `POST /api/game/{gameId}/validate` - validate if the puzzle is solved
+  - `DELETE /api/game/{gameId}` - delete/cleanup a game
 
 ##  Contributing
 
@@ -93,3 +130,8 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 ##  License
 
 This project is open-source and available under the standard MIT License.
+
+## Notes / Next Improvements (optional)
+- Add a short `Frontend/.env.example` and `Backend/.env.example` (if you later move secrets out of `application.properties`).
+- Add DB migration tooling (Flyway/Liquibase) if you want automatic table creation.
+- Add a short “Troubleshooting” section for common issues (MySQL not running, wrong DB password, ports in use).

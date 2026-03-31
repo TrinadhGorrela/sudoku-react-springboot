@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
+@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000",
+        "http://localhost:5174" }, allowCredentials = "true")
 public class UserController {
 
     @Autowired
@@ -22,17 +24,15 @@ public class UserController {
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         try {
             User user = userService.registerNewUser(
-                request.getUsername(),
-                request.getEmail(),
-                request.getPassword()
-            );
+                    request.getUsername(),
+                    request.getEmail(),
+                    request.getPassword());
             AuthResponse response = new AuthResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getUserType().toString(),
-                null
-            );
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getUserType().toString(),
+                    null);
             response.setMessage("Registration successful!");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -47,12 +47,11 @@ public class UserController {
         try {
             User user = userService.login(request.getUsernameOrEmail(), request.getPassword());
             AuthResponse response = new AuthResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getUserType().toString(),
-                null
-            );
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    user.getUserType().toString(),
+                    null);
             response.setMessage("Login successful!");
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {

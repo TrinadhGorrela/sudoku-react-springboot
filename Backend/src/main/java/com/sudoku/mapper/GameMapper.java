@@ -9,7 +9,6 @@ import com.sudoku.entity.Game;
 import com.sudoku.enums.GameStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,15 +18,7 @@ public class GameMapper {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    // -------------------------------------------------------------------------
-    // Entity → DTO
-    // -------------------------------------------------------------------------
-
-    /**
-     * Converts a persisted Game entity into a transient GameState DTO,
-     * deserializing all JSON fields back into their Java types.
-     */
+ 
     public GameState toGameState(Game game) {
         GameState state = new GameState();
         state.setGameId(game.getGameId());
@@ -35,8 +26,8 @@ public class GameMapper {
         state.setDifficulty(game.getDifficulty());
         state.setMistakes(game.getMistakes());
         state.setTimeElapsed(game.getTimeElapsed());
-        state.setStartTime(game.getStartTime());                      // Long field — no conversion needed
-        state.setCompleted(game.getStatus() != GameStatus.IN_PROGRESS); // covers COMPLETED + ABANDONED
+        state.setStartTime(game.getStartTime());                      
+        state.setCompleted(game.getStatus() != GameStatus.IN_PROGRESS);
 
         state.setPuzzle(deserializeBoard(game.getPuzzleJson()));
         state.setCurrentBoard(deserializeBoard(game.getCurrentBoardJson()));
@@ -47,15 +38,6 @@ public class GameMapper {
         return state;
     }
 
-    // -------------------------------------------------------------------------
-    // DTO → Entity  (used only on createGame)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Converts a GameState DTO into a new Game entity.
-     * Only use this when creating a brand-new game.
-     * For updates, use {@link #updateEntity(Game, GameState)} instead.
-     */
     public Game toEntity(GameState state) {
         Game game = new Game();
         game.setGameId(state.getGameId());
@@ -73,14 +55,6 @@ public class GameMapper {
         return game;
     }
 
-    // -------------------------------------------------------------------------
-    // Partial update  (used on every move / undo / notes save)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Applies mutable GameState fields back onto an existing Game entity.
-     * Immutable fields (puzzle, solution, difficulty, gameId) are intentionally skipped.
-     */
     public void updateEntity(Game game, GameState state) {
         game.setCurrentBoardJson(serializeBoard(state.getCurrentBoard()));
         game.setMistakes(state.getMistakes());
@@ -93,10 +67,6 @@ public class GameMapper {
             game.setCompletedAt(LocalDateTime.now());
         }
     }
-
-    // =========================================================================
-    // JSON helpers
-    // =========================================================================
 
     private String serializeBoard(int[][] board) {
         try {
@@ -148,7 +118,6 @@ public class GameMapper {
         }
     }
 
-    /** Returns a clean 9×9 empty notes structure. */
     private List<List<List<Integer>>> emptyNotes() {
         List<List<List<Integer>>> notes = new ArrayList<>();
         for (int i = 0; i < 9; i++) {
