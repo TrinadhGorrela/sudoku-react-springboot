@@ -43,7 +43,7 @@ public class PuzzleGenerator {
     private static int getTargetCells(String difficulty) {
         switch (difficulty.toLowerCase()) {
             case "easy":
-                return 35;
+                return 1; // Temporarily 1 for testing the victory modal
             case "medium":
                 return 45;
             case "hard":

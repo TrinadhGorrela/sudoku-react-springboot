@@ -2,10 +2,16 @@ package com.sudoku.entity;
 
 import com.sudoku.enums.GameStatus;
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "games")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Game {
 
     @Id
@@ -13,7 +19,7 @@ public class Game {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String gameId; 
+    private String gameId;
 
     @Column(name = "user_id")
     private Long userId = 0L;
@@ -37,7 +43,7 @@ public class Game {
     private Long timeElapsed = 0L;
 
     @Column(nullable = false)
-    private Long startTime;
+    private Long startTime = System.currentTimeMillis();
 
     @Column(columnDefinition = "TEXT")
     private String moveHistoryJson = "[]";
@@ -50,132 +56,7 @@ public class Game {
     private GameStatus status = GameStatus.IN_PROGRESS;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     private LocalDateTime completedAt;
-
-    public Game() {
-        this.createdAt = LocalDateTime.now();
-        this.startTime = System.currentTimeMillis();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getGameId() {
-        return gameId;
-    }
-
-    public void setGameId(String gameId) {
-        this.gameId = gameId;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
-    }
-
-    public String getDifficulty() {
-        return difficulty;
-    }
-
-    public void setDifficulty(String difficulty) {
-        this.difficulty = difficulty;
-    }
-
-    public String getPuzzleJson() {
-        return puzzleJson;
-    }
-
-    public void setPuzzleJson(String puzzleJson) {
-        this.puzzleJson = puzzleJson;
-    }
-
-    public String getCurrentBoardJson() {
-        return currentBoardJson;
-    }
-
-    public void setCurrentBoardJson(String currentBoardJson) {
-        this.currentBoardJson = currentBoardJson;
-    }
-
-    public String getSolutionJson() {
-        return solutionJson;
-    }
-
-    public void setSolutionJson(String solutionJson) {
-        this.solutionJson = solutionJson;
-    }
-
-    public Integer getMistakes() {
-        return mistakes;
-    }
-
-    public void setMistakes(Integer mistakes) {
-        this.mistakes = mistakes;
-    }
-
-    public Long getTimeElapsed() {
-        return timeElapsed;
-    }
-
-    public Long getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(Long startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getMoveHistoryJson() {
-        return moveHistoryJson;
-    }
-
-    public void setMoveHistoryJson(String moveHistoryJson) {
-        this.moveHistoryJson = moveHistoryJson;
-    }
-
-    public String getNotesJson() {
-        return notesJson;
-    }
-
-    public void setNotesJson(String notesJson) {
-        this.notesJson = notesJson;
-    }
-
-    public void setTimeElapsed(Long timeElapsed) {
-        this.timeElapsed = timeElapsed;
-    }
-
-    public GameStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(GameStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public LocalDateTime getCompletedAt() {
-        return completedAt;
-    }
-
-    public void setCompletedAt(LocalDateTime completedAt) {
-        this.completedAt = completedAt;
-    }
 }

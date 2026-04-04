@@ -17,8 +17,6 @@ import com.sudoku.util.SmartHintGenerator;
 
 @RestController
 @RequestMapping("/api/game")
-@CrossOrigin(origins = { "http://localhost:5173", "http://localhost:3000",
-        "http://localhost:5174" }, allowCredentials = "true")
 public class GameController {
 
     @Autowired

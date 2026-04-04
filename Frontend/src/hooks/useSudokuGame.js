@@ -96,6 +96,10 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   const loadGame = async (difficulty = "MEDIUM") => {
     setLoading(true);
     setError(null);
+    setBoard([]);
+    setPuzzle([]);
+    setSolution([]);
+    setMistakes(0);
     try {
       const gameData = await gameAPI.startGame(difficulty);
       setGameId(gameData.gameId);

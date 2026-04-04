@@ -23,7 +23,7 @@ public class SmartHintGenerator {
                 if (board[i][j] == 0) {
                     List<Integer> answer = getPossibleNumbers(board, i, j);
                     if (answer.size() == 1) {
-                        return new HintInfo(i, j, answer.get(0), "Naked Single",
+                        return new HintInfo(i, j, answer.get(0), "Last Remaining Cell",
                                 "This cell must be " + answer.get(0) +
                                         " because all other numbers are eliminated by row, column, or box.");
                     }
@@ -50,7 +50,7 @@ public class SmartHintGenerator {
                 }
 
                 if (count == 1) {
-                    return new HintInfo(row, foundCol, num, "Hidden Single",
+                    return new HintInfo(row, foundCol, num, "Last Remaining Cell",
                             "Only cell in row " + (row + 1) + " that can contain " + num);
                 }
             }

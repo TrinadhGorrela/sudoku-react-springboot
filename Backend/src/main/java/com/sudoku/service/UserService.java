@@ -41,7 +41,6 @@ public class UserService {
         if (user.getUserType() != UserType.REGISTERED) {
             throw new RuntimeException("User is not registered");
         }
-        // Use JBCrypt instead of Spring Security BCrypt
         if (!BCrypt.checkpw(password, user.getPasswordHash())) {
             throw new RuntimeException("Invalid credentials");
         }
