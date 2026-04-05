@@ -1,5 +1,6 @@
 package com.sudoku.util;
 
+import com.sudoku.constants.GameConstants;
 import java.util.*;
 
 public class PuzzleGenerator {
@@ -62,8 +63,8 @@ public class PuzzleGenerator {
     private static List<int[]> getAllPositionsRandomized() {
         List<int[]> positions = new ArrayList<>();
 
-        for (int row = 0; row < 9; row++) {
-            for (int col = 0; col < 9; col++) {
+        for (int row = 0; row < GameConstants.GRID_SIZE; row++) {
+            for (int col = 0; col < GameConstants.GRID_SIZE; col++) {
                 positions.add(new int[] { row, col });
             }
         }
@@ -83,8 +84,8 @@ public class PuzzleGenerator {
         int emptyCol = -1;
         boolean foundEmpty = false;
 
-        for (int row = 0; row < 9 && !foundEmpty; row++) {
-            for (int col = 0; col < 9 && !foundEmpty; col++) {
+        for (int row = 0; row < GameConstants.GRID_SIZE && !foundEmpty; row++) {
+            for (int col = 0; col < GameConstants.GRID_SIZE && !foundEmpty; col++) {
                 if (board[row][col] == 0) {
                     emptyRow = row;
                     emptyCol = col;
@@ -99,7 +100,7 @@ public class PuzzleGenerator {
 
         int solutionCount = 0;
 
-        for (int num = 1; num <= 9; num++) {
+        for (int num = 1; num <= GameConstants.GRID_SIZE; num++) {
             if (BoardValidator.isValid(board, emptyRow, emptyCol, num)) {
                 board[emptyRow][emptyCol] = num;
                 solutionCount += countSolutionsLimited(board, limit);
@@ -186,13 +187,15 @@ public class PuzzleGenerator {
 
     private static List<int[]> generateSymmetricalPairs() {
         List<int[]> pairs = new ArrayList<>();
+        int gs = GameConstants.GRID_SIZE;
+        int half = (gs + 1) / 2;
 
-        for (int row = 0; row < 5; row++) {
-            for (int col = 0; col < 9; col++) {
-                int symRow = 8 - row;
-                int symCol = 8 - col;
+        for (int row = 0; row < half; row++) {
+            for (int col = 0; col < gs; col++) {
+                int symRow = gs - 1 - row;
+                int symCol = gs - 1 - col;
 
-                if (row == 4 && col == 4) {
+                if (row == gs / 2 && col == gs / 2) {
                     continue;
                 }
 

@@ -1,27 +1,5 @@
 import { storageManager } from "./storageManager";
-
-// ============ VALIDATION HELPERS ============
-export const isCellWrong = (board, solution, row, col) => {
-  if (!board || !solution || board.length === 0 || solution.length === 0) {
-    return false;
-  }
-
-  if (row < 0 || row >= 9 || col < 0 || col >= 9) return false;
-  if (!board[row] || !solution[row]) return false;
-
-  const userValue = board[row][col];
-  const correctValue = solution[row][col];
-
-  if (
-    userValue === null ||
-    userValue === undefined ||
-    userValue === correctValue
-  ) {
-    return false;
-  }
-
-  return userValue !== correctValue;
-};
+import { GRID_SIZE } from "../constants/gameConstants";
 
 export const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60);
@@ -29,22 +7,24 @@ export const formatTime = (seconds) => {
   return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
+// ============ VALIDATION HELPERS ============
 export const isValidSudokuMove = (board, row, col, value) => {
-  if (value === null || value < 1 || value > 9) return false;
+  if (value === null || value < 1 || value > GRID_SIZE) return false;
 
-  for (let c = 0; c < 9; c++) {
+  for (let c = 0; c < GRID_SIZE; c++) {
     if (c !== col && board[row][c] === value) return false;
   }
 
-  for (let r = 0; r < 9; r++) {
+  for (let r = 0; r < GRID_SIZE; r++) {
     if (r !== row && board[r][col] === value) return false;
   }
 
-  const boxRow = Math.floor(row / 3) * 3;
-  const boxCol = Math.floor(col / 3) * 3;
+  const boxStride = GRID_SIZE / 3;
+  const boxRow = Math.floor(row / boxStride) * boxStride;
+  const boxCol = Math.floor(col / boxStride) * boxStride;
 
-  for (let r = boxRow; r < boxRow + 3; r++) {
-    for (let c = boxCol; c < boxCol + 3; c++) {
+  for (let r = boxRow; r < boxRow + boxStride; r++) {
+    for (let c = boxCol; c < boxCol + boxStride; c++) {
       if (r !== row && c !== col && board[r][c] === value) return false;
     }
   }

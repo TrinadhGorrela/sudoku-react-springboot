@@ -1,9 +1,11 @@
 package com.sudoku.service;
 
+import com.sudoku.constants.GameConstants;
 import com.sudoku.dto.GameState;
 import com.sudoku.dto.MoveHistory;
 import com.sudoku.entity.Game;
 import com.sudoku.enums.GameStatus;
+import com.sudoku.exception.GameExceptions;
 import com.sudoku.mapper.GameMapper;
 import com.sudoku.repository.GameRepository;
 import com.sudoku.util.BoardUtils;
@@ -28,9 +30,6 @@ public class GameService {
     @Autowired
     private GameMapper gameMapper;
 
-    @Autowired
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
-
     @Transactional
     public GameState createGame(String difficulty) {
         int[][] solution = CompletedBoardGenerator.puzzle();
@@ -42,9 +41,9 @@ public class GameService {
             game.setUserId(0L);
         }
         game.setDifficulty(difficulty);
-        game.setPuzzleJson(serializeIntArray(puzzle));
-        game.setCurrentBoardJson(serializeIntArray(BoardUtils.copyBoard(puzzle)));
-        game.setSolutionJson(serializeIntArray(solution));
+        game.setPuzzleJson(gameMapper.serializeBoard(puzzle));
+        game.setCurrentBoardJson(gameMapper.serializeBoard(BoardUtils.copyBoard(puzzle)));
+        game.setSolutionJson(gameMapper.serializeBoard(solution));
         game.setMistakes(0);
         game.setTimeElapsed(0L);
         game.setStatus(GameStatus.IN_PROGRESS);
@@ -79,18 +78,14 @@ public class GameService {
                            || state.getSolution()[row][col] != value;
 
             if (isWrong) {
-                boolean previousWasAlsoWrong = previousValue != 0
-                        && previousValue != state.getSolution()[row][col];
-                if (previousValue == 0 || !previousWasAlsoWrong) {
-                    state.setMistakes(state.getMistakes() + 1);
-                    incrementedMistake = true;
-                }
+                state.setMistakes(state.getMistakes() + 1);
+                incrementedMistake = true;
             }
         }
 
         state.addMoveToHistory(new MoveHistory(row, col, previousValue, value, incrementedMistake));
 
-        if (state.getMistakes() >= 3) {
+        if (state.getMistakes() >= GameConstants.MAX_MISTAKES) {
             state.setCompleted(true);
             state.setTimeElapsed(System.currentTimeMillis() - state.getStartTime());
         } else if (isBoardComplete(state.getCurrentBoard(), state.getSolution())) {
@@ -110,11 +105,11 @@ public class GameService {
         GameState state = gameMapper.toGameState(game);
 
         if (state.isCompleted()) {
-            throw new RuntimeException("Cannot undo - game is completed");
+            throw new GameExceptions.Completed("Cannot undo - game is completed");
         }
         MoveHistory lastMove = state.popLastMove();
         if (lastMove == null) {
-            throw new RuntimeException("No moves to undo");
+            throw new GameExceptions.NoMovesToUndo();
         }
 
         if (lastMove.isIncrementedMistakeCounter() && state.getMistakes() > 0) {
@@ -133,21 +128,21 @@ public class GameService {
         GameState state = gameMapper.toGameState(loadGame(gameId));
 
         if (state.isCompleted()) {
-            throw new RuntimeException("Game already completed");
+            throw new GameExceptions.Completed();
         }
 
         HintInfo hint = SmartHintGenerator.getHint(state.getCurrentBoard());
 
         if (hint == null || hint.value != state.getSolution()[hint.row][hint.col]) {
-            for (int i = 0; i < 9; i++) {
-                for (int j = 0; j < 9; j++) {
+            for (int i = 0; i < GameConstants.GRID_SIZE; i++) {
+                for (int j = 0; j < GameConstants.GRID_SIZE; j++) {
                     if (state.getCurrentBoard()[i][j] == 0) {
                         return new HintInfo(i, j, state.getSolution()[i][j], "Reveal Cell",
                             "The next correct number for this cell is " + state.getSolution()[i][j]);
                     }
                 }
             }
-            throw new RuntimeException("No hint available");
+            throw new GameExceptions.HintNotAvailable();
         }
 
         return hint;
@@ -176,41 +171,33 @@ public class GameService {
     @Transactional
     public void cleanupOldGames(long timeoutHours) {
         LocalDateTime cutoff = LocalDateTime.now().minusHours(timeoutHours);
-        List<Game> oldGames = gameRepository.findOldInProgressGames(cutoff);
-        for (Game g : oldGames) {
-            g.setStatus(GameStatus.ABANDONED);
-        }
-        gameRepository.saveAll(oldGames);
+        gameRepository.updateStatusForOldGames(GameStatus.IN_PROGRESS, GameStatus.ABANDONED, cutoff);
     }
 
     private Game loadGame(String gameId) {
         return gameRepository.findByGameId(gameId)
-                .orElseThrow(() -> new RuntimeException("Game not found: " + gameId));
+                .orElseThrow(() -> new GameExceptions.NotFound(gameId));
     }
 
     private void validateMove(GameState game, int row, int col, int value) {
-        if (game.isCompleted())                throw new RuntimeException("Game already completed");
-        if (row < 0 || row > 8 || col < 0 || col > 8) throw new RuntimeException("Invalid cell position");
-        if (value < 0 || value > 9)            throw new RuntimeException("Value must be between 0 and 9");
-        if (game.getPuzzle()[row][col] != 0)   throw new RuntimeException("Cannot modify original puzzle clue");
+        if (game.isCompleted()) throw new GameExceptions.Completed();
+        if (row < 0 || row >= GameConstants.GRID_SIZE || col < 0 || col >= GameConstants.GRID_SIZE) {
+            throw new IllegalArgumentException("Invalid cell position");
+        }
+        if (value < 0 || value > GameConstants.GRID_SIZE) {
+            throw new IllegalArgumentException("Value must be between 0 and " + GameConstants.GRID_SIZE);
+        }
+        if (game.getPuzzle()[row][col] != 0) throw new IllegalArgumentException("Cannot modify original puzzle clue");
     }
 
     private boolean isBoardComplete(int[][] currentBoard, int[][] solution) {
-        for (int i = 0; i < 9; i++)
-            for (int j = 0; j < 9; j++)
+        for (int i = 0; i < GameConstants.GRID_SIZE; i++)
+            for (int j = 0; j < GameConstants.GRID_SIZE; j++)
                 if (currentBoard[i][j] == 0 || currentBoard[i][j] != solution[i][j]) return false;
         return true;
     }
 
     private String generateGameId() {
         return UUID.randomUUID().toString().substring(0, 8);
-    }
-
-    private String serializeIntArray(int[][] board) {
-        try {
-            return objectMapper.writeValueAsString(board);
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-            throw new RuntimeException("Failed to serialize board", e);
-        }
     }
 }

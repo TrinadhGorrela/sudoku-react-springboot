@@ -1,5 +1,9 @@
 import styles from "./Grid.module.css";
 import classNames from "classnames";
+import { GRID_SIZE } from "../../constants/gameConstants";
+
+const DIGITS = Array.from({ length: GRID_SIZE }, (_, i) => i + 1);
+const boxStride = GRID_SIZE / 3;
 
 const Grid = ({
   board,
@@ -13,6 +17,7 @@ const Grid = ({
   onTimerToggle,
   highlightedCell,
   hintInfo,
+  isProcessing = false,
 }) => {
   const isHighlighted = (row, col) => {
     return highlightedCell === `${row}-${col}`;
@@ -40,8 +45,8 @@ const Grid = ({
                 const isSameCol = selected && cIdx === selected[1];
                 const isSameBox =
                   selected &&
-                  Math.floor(rIdx / 3) === Math.floor(selected[0] / 3) &&
-                  Math.floor(cIdx / 3) === Math.floor(selected[1] / 3);
+                  Math.floor(rIdx / boxStride) === Math.floor(selected[0] / boxStride) &&
+                  Math.floor(cIdx / boxStride) === Math.floor(selected[1] / boxStride);
 
                 const isRelated =
                   (isSameRow || isSameCol || isSameBox) && !isSelected;
@@ -64,7 +69,7 @@ const Grid = ({
                     <div className={styles.cellContent}>
                       {!cell && currentCellNotes.length > 0 && (
                         <div className={styles.notesGrid}>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                          {DIGITS.map((num) => (
                             <div key={num} className={styles.noteNumber}>
                               {currentCellNotes.includes(num) ? num : ""}
                             </div>
@@ -73,6 +78,7 @@ const Grid = ({
                       )}
 
                       <input
+                        id={`cell-${rIdx}-${cIdx}`}
                         className={classNames(styles.input, {
                           [styles.selectedCell]: isSelected,
                           [styles.relatedCell]: isRelated,
@@ -87,22 +93,42 @@ const Grid = ({
                         type="text"
                         maxLength={1}
                         value={cell === null ? "" : cell}
-                        readOnly={isPrefilled}
+                        readOnly={isPrefilled || isProcessing}
                         onFocus={() => setSelected([rIdx, cIdx])}
                         onClick={() => setSelected([rIdx, cIdx])}
                         onKeyDown={(e) => {
-                          if (e.key >= "1" && e.key <= "9") {
+                          if (e.key >= "1" && e.key <= String(GRID_SIZE)) {
                             handleInput(rIdx, cIdx, parseInt(e.key));
                           } else if (
                             e.key === "Backspace" ||
                             e.key === "Delete"
                           ) {
                             handleInput(rIdx, cIdx, null);
+                          } else if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            const newR = Math.max(0, rIdx - 1);
+                            setSelected([newR, cIdx]);
+                            document.getElementById(`cell-${newR}-${cIdx}`)?.focus();
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            const newR = Math.min(GRID_SIZE - 1, rIdx + 1);
+                            setSelected([newR, cIdx]);
+                            document.getElementById(`cell-${newR}-${cIdx}`)?.focus();
+                          } else if (e.key === "ArrowLeft") {
+                            e.preventDefault();
+                            const newC = Math.max(0, cIdx - 1);
+                            setSelected([rIdx, newC]);
+                            document.getElementById(`cell-${rIdx}-${newC}`)?.focus();
+                          } else if (e.key === "ArrowRight") {
+                            e.preventDefault();
+                            const newC = Math.min(GRID_SIZE - 1, cIdx + 1);
+                            setSelected([rIdx, newC]);
+                            document.getElementById(`cell-${rIdx}-${newC}`)?.focus();
                           }
                         }}
                         onChange={(e) => {
                           const value = e.target.value;
-                          if (value === "" || /^[1-9]$/.test(value)) {
+                          if (value === "" || new RegExp(`^[1-${GRID_SIZE}]$`).test(value)) {
                             handleInput(
                               rIdx,
                               cIdx,

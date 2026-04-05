@@ -57,6 +57,7 @@ function App() {
     isError,
     handleHintAccept,
     handleHintDismiss,
+    isProcessing,
   } = useSudokuGame("MEDIUM");
 
   if (currentView === "login") {
@@ -112,6 +113,7 @@ function App() {
                 variant="light"
                 className="user-dropdown-toggle"
                 id="dropdown-basic"
+                disabled={isProcessing}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -151,6 +153,7 @@ function App() {
         <DifficultySelector
           difficulty={difficulty}
           setDifficulty={handleDifficultyChange}
+          disabled={isProcessing}
         />
       </header>
 
@@ -168,6 +171,7 @@ function App() {
             isTimerRunning={isTimerRunning}
             highlightedCell={highlightedCell}
             hintInfo={hintInfo}
+            isProcessing={isProcessing}
           />
         </div>
         <div style={{ position: "relative" }}>
@@ -185,6 +189,7 @@ function App() {
             onHintRequest={handleHintRequest}
             hintsUsed={hintsUsed}
             maxHints={maxHints}
+            isProcessing={isProcessing}
           />
           <HintModal
             show={!!hintInfo}

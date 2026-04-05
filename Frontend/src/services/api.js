@@ -1,3 +1,5 @@
+import { GRID_SIZE } from "../constants/gameConstants";
+
 const API_BASE_URL = "/api/game";
 const USER_API_URL = "/api/user";
 
@@ -82,17 +84,17 @@ export const userAPI = {
 const convertToFrontendFormat = (backendBoard) => {
   if (!backendBoard || !Array.isArray(backendBoard)) {
     console.warn("Invalid board data, returning empty board");
-    return Array(9)
+    return Array(GRID_SIZE)
       .fill()
-      .map(() => Array(9).fill(null));
+      .map(() => Array(GRID_SIZE).fill(null));
   }
-  for (let r = 0; r < 9; r++) {
+  for (let r = 0; r < GRID_SIZE; r++) {
     const row = backendBoard[r];
     if (!Array.isArray(row)) {
       console.warn("Invalid row data, returning empty row");
-      backendBoard[r] = Array(9).fill(null);
+      backendBoard[r] = Array(GRID_SIZE).fill(null);
     } else {
-      for (let c = 0; c < 9; c++) {
+      for (let c = 0; c < GRID_SIZE; c++) {
         if (row[c] === 0) row[c] = null;
       }
     }

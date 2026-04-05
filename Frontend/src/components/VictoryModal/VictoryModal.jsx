@@ -8,6 +8,7 @@ import {
 } from "../../utils/ScoreCalculator";
 import { formatTime } from "../../utils/sudokuHelpers";
 import styles from "./VictoryModal.module.css";
+import { MAX_MISTAKES } from "../../constants/gameConstants";
 
 const VictoryModal = ({
   show,
@@ -36,7 +37,7 @@ const VictoryModal = ({
 
   return (
     <>
-      {show && mistakes < 3 && (
+      {show && mistakes < MAX_MISTAKES && (
         <Confetti
           width={windowDimension.width}
           height={windowDimension.height}
@@ -55,7 +56,7 @@ const VictoryModal = ({
       >
         <Modal.Header
           className={
-            mistakes >= 3
+            mistakes >= MAX_MISTAKES
               ? "bg-danger text-white border-0"
               : `${styles.bgGradientSuccess} text-white border-0`
           }
@@ -63,9 +64,9 @@ const VictoryModal = ({
           <Modal.Title className="w-100 text-center">
             <div className={styles.victoryHeader}>
               <h2 className="display-4 fw-bold mb-2">
-                {mistakes >= 3 ? "Game Over!" : "Victory!"}
+                {mistakes >= MAX_MISTAKES ? "Game Over!" : "Victory!"}
               </h2>
-              {mistakes < 3 && (
+              {mistakes < MAX_MISTAKES && (
                 <div
                   className={styles.gradeBadge}
                   style={{ backgroundColor: getGradeColor(scoreData.grade) }}
@@ -98,7 +99,7 @@ const VictoryModal = ({
             </h4>
           </div>
 
-          {mistakes < 3 ? (
+          {mistakes < MAX_MISTAKES ? (
             <div className={`${styles.scoreContainer} mb-4`}>
               <div className={styles.totalScore}>
                 <div className={styles.scoreLabel}>Total Score</div>
@@ -108,7 +109,7 @@ const VictoryModal = ({
             </div>
           ) : (
             <div className="text-center mb-4 text-danger mt-3">
-              <h5>You reached 3 mistakes. Better luck next time!</h5>
+              <h5>You reached {MAX_MISTAKES} mistakes. Better luck next time!</h5>
             </div>
           )}
 

@@ -3,6 +3,7 @@ package com.sudoku.repository;
 import com.sudoku.entity.Game;
 import com.sudoku.enums.GameStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -26,8 +27,9 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     @Query("SELECT g FROM Game g WHERE g.userId = :userId AND g.status = 'COMPLETED' ORDER BY g.completedAt DESC")
     List<Game> findCompletedGamesByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT g FROM Game g WHERE g.status = 'IN_PROGRESS' AND g.createdAt < :cutoffTime")
-    List<Game> findOldInProgressGames(@Param("cutoffTime") LocalDateTime cutoffTime);
+    @Modifying
+    @Query("UPDATE Game g SET g.status = :newStatus WHERE g.status = :oldStatus AND g.createdAt < :cutoffTime")
+    int updateStatusForOldGames(@Param("oldStatus") GameStatus oldStatus, @Param("newStatus") GameStatus newStatus, @Param("cutoffTime") LocalDateTime cutoffTime);
 
     Long countByStatus(GameStatus status);
     

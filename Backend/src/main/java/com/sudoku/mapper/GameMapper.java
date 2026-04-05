@@ -3,6 +3,7 @@ package com.sudoku.mapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sudoku.constants.GameConstants;
 import com.sudoku.dto.GameState;
 import com.sudoku.dto.MoveHistory;
 import com.sudoku.entity.Game;
@@ -63,12 +64,13 @@ public class GameMapper {
         game.setNotesJson(serializeNotes(state.getNotes()));
 
         if (state.isCompleted()) {
-            game.setStatus(state.getMistakes() >= 3 ? GameStatus.ABANDONED : GameStatus.COMPLETED);
+            game.setStatus(state.getMistakes() >= GameConstants.MAX_MISTAKES
+                    ? GameStatus.ABANDONED : GameStatus.COMPLETED);
             game.setCompletedAt(LocalDateTime.now());
         }
     }
 
-    private String serializeBoard(int[][] board) {
+    public String serializeBoard(int[][] board) {
         try {
             return objectMapper.writeValueAsString(board);
         } catch (JsonProcessingException e) {
@@ -120,9 +122,9 @@ public class GameMapper {
 
     private List<List<List<Integer>>> emptyNotes() {
         List<List<List<Integer>>> notes = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < GameConstants.GRID_SIZE; i++) {
             List<List<Integer>> row = new ArrayList<>();
-            for (int j = 0; j < 9; j++) row.add(new ArrayList<>());
+            for (int j = 0; j < GameConstants.GRID_SIZE; j++) row.add(new ArrayList<>());
             notes.add(row);
         }
         return notes;

@@ -6,20 +6,16 @@ import {
 } from "../utils/sudokuHelpers";
 import { storageManager } from "../utils/storageManager";
 import { gameAPI } from "../services/api";
+import { GRID_SIZE, MAX_HINTS, MAX_MISTAKES } from "../constants/gameConstants";
 
-const EMPTY_NOTES_TEMPLATE = Array(9)
-  .fill(null)
-  .map(() =>
-    Array(9)
-      .fill(null)
-      .map(() => []),
-  );
-
-const getEmptyNotes = () => {
-  return EMPTY_NOTES_TEMPLATE.map((row) => row.map((cell) => [...cell]));
-};
-
-const MAX_HINTS = 3;
+const getEmptyNotes = () =>
+  Array(GRID_SIZE)
+    .fill(null)
+    .map(() =>
+      Array(GRID_SIZE)
+        .fill(null)
+        .map(() => []),
+    );
 
 const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   const [selected, setSelected] = useState(null);
@@ -33,12 +29,18 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [solution, setSolution] = useState([]);
-  const isCompleted = mistakes >= 3 || (board.length > 0 && board.every((row, r) => row.every((val, c) => val !== null && val !== 0 && val === solution[r]?.[c])));
+  const isCompleted =
+    mistakes >= MAX_MISTAKES ||
+    (board.length > 0 &&
+      board.every((row, r) =>
+        row.every((val, c) => val !== null && val !== 0 && val === solution[r]?.[c]),
+      ));
   const [isNoteMode, setIsNoteMode] = useState(false);
   const [notes, setNotes] = useState(getEmptyNotes);
   const [hintInfo, setHintInfo] = useState(null);
   const [highlightedCell, setHighlightedCell] = useState(null);
   const [hintsUsed, setHintsUsed] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const saveNotesToStorage = (notesData) => {
     storageManager.save("sudokuNotes", notesData);
@@ -71,7 +73,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
   const clearRelatedNotes = (rowIdx, colIdx, value) => {
     setNotes((prevNotes) => {
       const newNotes = prevNotes.map((row) => row.map((cell) => [...cell]));
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < GRID_SIZE; i++) {
         if (newNotes[rowIdx][i].includes(value)) {
           newNotes[rowIdx][i] = newNotes[rowIdx][i].filter((n) => n !== value);
         }
@@ -79,10 +81,11 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
           newNotes[i][colIdx] = newNotes[i][colIdx].filter((n) => n !== value);
         }
       }
-      const boxRow = Math.floor(rowIdx / 3) * 3;
-      const boxCol = Math.floor(colIdx / 3) * 3;
-      for (let r = boxRow; r < boxRow + 3; r++) {
-        for (let c = boxCol; c < boxCol + 3; c++) {
+      const boxStride = GRID_SIZE / 3;
+      const boxRow = Math.floor(rowIdx / boxStride) * boxStride;
+      const boxCol = Math.floor(colIdx / boxStride) * boxStride;
+      for (let r = boxRow; r < boxRow + boxStride; r++) {
+        for (let c = boxCol; c < boxCol + boxStride; c++) {
           if (newNotes[r][c].includes(value)) {
             newNotes[r][c] = newNotes[r][c].filter((n) => n !== value);
           }
@@ -128,45 +131,37 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     }
   };
 
-  const handleInput = async (rIdx, cIdx, value) => {
-    if (puzzle[rIdx][cIdx] !== null) return;
-    if (!gameId) return;
-    if (value !== null && (value < 1 || value > 9)) return;
-
-    if (isNoteMode) {
-      if (value !== null && board[rIdx][cIdx] === null) {
-        setNotes((prevNotes) => {
-          const newNotes = prevNotes.map((row) => row.map((cell) => [...cell]));
-          const currentCellNotes = newNotes[rIdx][cIdx];
-          if (currentCellNotes.includes(value)) {
-            newNotes[rIdx][cIdx] = currentCellNotes.filter((n) => n !== value);
-          } else {
-            newNotes[rIdx][cIdx] = [...currentCellNotes, value].sort();
-          }
-          saveNotesToStorage(newNotes);
-          return newNotes;
-        });
-      }
-      return;
-    }
-
-    if (value !== null) {
-      setNotes((prev) => {
-        const newNotes = prev.map((row) => row.map((cell) => [...cell]));
-        newNotes[rIdx][cIdx] = [];
+  const updateNotes = (rIdx, cIdx, value) => {
+    if (value !== null && board[rIdx][cIdx] === null) {
+      setNotes((prevNotes) => {
+        const newNotes = prevNotes.map((row) => row.map((cell) => [...cell]));
+        const currentCellNotes = newNotes[rIdx][cIdx];
+        if (currentCellNotes.includes(value)) {
+          newNotes[rIdx][cIdx] = currentCellNotes.filter((n) => n !== value);
+        } else {
+          newNotes[rIdx][cIdx] = [...currentCellNotes, value].sort();
+        }
         saveNotesToStorage(newNotes);
         return newNotes;
       });
-      clearRelatedNotes(rIdx, cIdx, value);
-      setHighlightedCell(null);
-      setHintInfo(null);
-      saveHintToStorage(null, null);
     }
+  };
 
-    if (time === 0 && !isTimerRunning && mistakes === 0 && value !== null) {
-      setIsTimerRunning(true);
-    }
+  const clearCellNotes = (rIdx, cIdx, value) => {
+    setNotes((prev) => {
+      const newNotes = prev.map((row) => row.map((cell) => [...cell]));
+      newNotes[rIdx][cIdx] = [];
+      saveNotesToStorage(newNotes);
+      return newNotes;
+    });
+    clearRelatedNotes(rIdx, cIdx, value);
+    setHighlightedCell(null);
+    setHintInfo(null);
+    saveHintToStorage(null, null);
+  };
 
+  const submitMove = async (rIdx, cIdx, value) => {
+    setIsProcessing(true);
     try {
       const gameData = await gameAPI.makeMove(gameId, rIdx, cIdx, value);
       setBoard(gameData.currentBoard);
@@ -174,7 +169,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setSolution(gameData.solution);
       saveGameState(gameData.gameId, difficulty, time, isTimerRunning, gameData.currentBoard, puzzle);
       storageManager.save("sudokuBoard", gameData.currentBoard);
-      if (gameData.completed || gameData.mistakes >= 3) {
+      if (gameData.completed || gameData.mistakes >= MAX_MISTAKES) {
         setIsTimerRunning(false);
         setHighlightedCell(null);
         setHintInfo(null);
@@ -190,11 +185,35 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       } catch (fetchError) {
         console.error("Failed to fetch game state:", fetchError);
       }
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleUndo = async () => {
+  const handleInput = async (rIdx, cIdx, value) => {
+    if (puzzle[rIdx][cIdx] !== null) return;
     if (!gameId) return;
+    if (value !== null && (value < 1 || value > GRID_SIZE)) return;
+
+    if (isNoteMode) {
+      updateNotes(rIdx, cIdx, value);
+      return;
+    }
+
+    if (value !== null) {
+      clearCellNotes(rIdx, cIdx, value);
+    }
+
+    if (time === 0 && !isTimerRunning && mistakes === 0 && value !== null) {
+      setIsTimerRunning(true);
+    }
+
+    await submitMove(rIdx, cIdx, value);
+  };
+
+  const handleUndo = async () => {
+    if (!gameId || isProcessing) return;
+    setIsProcessing(true);
     try {
       const gameData = await gameAPI.undoMove(gameId);
       setBoard(gameData.currentBoard);
@@ -207,6 +226,8 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       saveHintToStorage(null, null);
     } catch (error) {
       console.error("Undo failed:", error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -219,8 +240,9 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       alert(`No more hints available. You've used all ${MAX_HINTS} hints for this game.`);
       return;
     }
-    if (!gameId) return;
+    if (!gameId || isProcessing) return;
 
+    setIsProcessing(true);
     try {
       const hintData = await gameAPI.getHint(gameId);
       if (hintData && hintData.row !== undefined && hintData.col !== undefined) {
@@ -243,11 +265,14 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     } catch (error) {
       console.error("Hint failed:", error);
       alert("No hints available for this puzzle.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleHintAccept = async () => {
-    if (!hintInfo) return;
+    if (!hintInfo || isProcessing) return;
+    setIsProcessing(true);
     const wasInNoteMode = isNoteMode;
     if (wasInNoteMode) {
       setIsNoteMode(false);
@@ -268,11 +293,13 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
       setSolution(gameData.solution);
       saveGameState(gameData.gameId, difficulty, time, isTimerRunning, gameData.currentBoard, puzzle);
       storageManager.save("sudokuBoard", gameData.currentBoard);
-      if (gameData.completed || gameData.mistakes >= 3) {
+      if (gameData.completed || gameData.mistakes >= MAX_MISTAKES) {
         setIsTimerRunning(false);
       }
     } catch (error) {
       console.error("Hint placement failed:", error);
+    } finally {
+      setIsProcessing(false);
     }
     if (wasInNoteMode) setIsNoteMode(true);
     setHighlightedCell(null);
@@ -422,6 +449,7 @@ const useSudokuGame = (initialDifficulty = "MEDIUM") => {
     toggleNoteMode,
     setHintInfo,
     setHighlightedCell,
+    isProcessing,
   };
 };
 

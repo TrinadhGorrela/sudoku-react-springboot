@@ -1,6 +1,6 @@
 package com.sudoku.controller;
 
-import java.util.*;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -12,6 +12,7 @@ import com.sudoku.dto.request.MoveRequest;
 import com.sudoku.dto.request.NotesUpdateRequest;
 import com.sudoku.dto.response.ValidationResponse;
 import com.sudoku.enums.Difficulty;
+import com.sudoku.exception.GameExceptions;
 import com.sudoku.service.GameService;
 import com.sudoku.util.SmartHintGenerator;
 
@@ -30,11 +31,7 @@ public class GameController {
             GameState gameState = gameService.createGame(difficultyEnum.getValue());
             return ResponseEntity.ok(new GameResponse(gameState));
         } catch (Exception e) {
-            Map<String, Object> errorMap = new HashMap<>();
-            errorMap.put("error", e.getClass().getSimpleName());
-            errorMap.put("message", e.getMessage() != null ? e.getMessage() : "null");
-            errorMap.put("cause", e.getCause() != null ? e.getCause().getMessage() : "null");
-            return ResponseEntity.internalServerError().body(errorMap);
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Internal server error"));
         }
     }
 
@@ -43,11 +40,9 @@ public class GameController {
         try {
             GameState gameState = gameService.getGameState(gameId);
             return ResponseEntity.ok(new GameResponse(gameState));
+        } catch (GameExceptions.NotFound e) {
+            return ResponseEntity.notFound().build();
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-            if (message.contains("not found")) {
-                return ResponseEntity.notFound().build();
-            }
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -64,15 +59,14 @@ public class GameController {
             int value = moveRequest.getValue();
             GameState updatedGame = gameService.makeMove(gameId, row, col, value);
             return ResponseEntity.ok(new GameResponse(updatedGame));
+        } catch (GameExceptions.NotFound e) {
+            return ResponseEntity.notFound().build();
+        } catch (GameExceptions.Completed e) {
+            return ResponseEntity.status(409).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-            if (message.contains("not found")) {
-                return ResponseEntity.notFound().build();
-            } else if (message.contains("completed")) {
-                return ResponseEntity.status(409).build();
-            } else {
-                return ResponseEntity.badRequest().body(message);
-            }
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -81,17 +75,14 @@ public class GameController {
         try {
             GameState gameState = gameService.undoMove(gameId);
             return ResponseEntity.ok(new GameResponse(gameState));
+        } catch (GameExceptions.NotFound e) {
+            return ResponseEntity.notFound().build();
+        } catch (GameExceptions.NoMovesToUndo e) {
+            return ResponseEntity.status(400).body(Map.of("error", "No moves to undo"));
+        } catch (GameExceptions.Completed e) {
+            return ResponseEntity.status(409).body(Map.of("error", "Cannot undo - game is completed"));
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-            if (message.contains("not found")) {
-                return ResponseEntity.notFound().build();
-            } else if (message.contains("no moves to undo")) {
-                return ResponseEntity.status(400).body(Map.of("error", "No moves to undo"));
-            } else if (message.contains("completed")) {
-                return ResponseEntity.status(409).body(Map.of("error", "Cannot undo - game is completed"));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-            }
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -104,11 +95,9 @@ public class GameController {
         try {
             GameState game = gameService.saveNotes(gameId, request.getNotes());
             return ResponseEntity.ok(new GameResponse(game));
+        } catch (GameExceptions.NotFound e) {
+            return ResponseEntity.notFound().build();
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-            if (message.contains("not found")) {
-                return ResponseEntity.notFound().build();
-            }
             return ResponseEntity.badRequest().build();
         }
     }
@@ -118,17 +107,14 @@ public class GameController {
         try {
             SmartHintGenerator.HintInfo hintInfo = gameService.getHint(gameId);
             return ResponseEntity.ok(new HintResponse(hintInfo));
+        } catch (GameExceptions.NotFound e) {
+            return ResponseEntity.notFound().build();
+        } catch (GameExceptions.Completed e) {
+            return ResponseEntity.status(409).build();
+        } catch (GameExceptions.HintNotAvailable e) {
+            return ResponseEntity.status(404).body(Map.of("error", "No hint available"));
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-            if (message.contains("not found")) {
-                return ResponseEntity.notFound().build();
-            } else if (message.contains("already completed")) {
-                return ResponseEntity.status(409).build();
-            } else if (message.contains("no hint available")) {
-                return ResponseEntity.status(404).body("No hint available");
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -151,11 +137,9 @@ public class GameController {
                     isValid,
                     isValid ? "Puzzle solved correctly!" : "Puzzle contains errors");
             return ResponseEntity.ok(response);
+        } catch (GameExceptions.NotFound e) {
+            return ResponseEntity.notFound().build();
         } catch (RuntimeException e) {
-            String message = (e.getMessage() != null) ? e.getMessage().toLowerCase() : "";
-            if (message.contains("not found")) {
-                return ResponseEntity.notFound().build();
-            }
             return ResponseEntity.badRequest().build();
         }
     }

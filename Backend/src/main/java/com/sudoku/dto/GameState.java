@@ -1,6 +1,7 @@
 package com.sudoku.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sudoku.constants.GameConstants;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,9 +43,9 @@ public class GameState {
 
     public GameState() {
         this.notes = new ArrayList<>();
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < GameConstants.GRID_SIZE; i++) {
             List<List<Integer>> row = new ArrayList<>();
-            for (int j = 0; j < 9; j++) {
+            for (int j = 0; j < GameConstants.GRID_SIZE; j++) {
                 row.add(new ArrayList<>());
             }
             notes.add(row);

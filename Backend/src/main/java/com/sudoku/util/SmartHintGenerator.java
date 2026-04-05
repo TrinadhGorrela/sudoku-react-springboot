@@ -1,5 +1,6 @@
 package com.sudoku.util;
 
+import com.sudoku.constants.GameConstants;
 import java.util.*;
 
 public class SmartHintGenerator {
@@ -34,12 +35,15 @@ public class SmartHintGenerator {
     }
 
     private static HintInfo findHiddenSingle(int[][] board) {
-        for (int row = 0; row < 9; row++) {
-            for (int num = 1; num <= 9; num++) {
+        int gs = GameConstants.GRID_SIZE;
+        int boxStride = gs / 3;
+
+        for (int row = 0; row < gs; row++) {
+            for (int num = 1; num <= gs; num++) {
                 int count = 0;
                 int foundCol = -1;
 
-                for (int col = 0; col < 9; col++) {
+                for (int col = 0; col < gs; col++) {
                     if (board[row][col] == 0) {
                         List<Integer> possible = getPossibleNumbers(board, row, col);
                         if (possible.contains(num)) {
@@ -56,12 +60,12 @@ public class SmartHintGenerator {
             }
         }
 
-        for (int col = 0; col < 9; col++) {
-            for (int num = 1; num <= 9; num++) {
+        for (int col = 0; col < gs; col++) {
+            for (int num = 1; num <= gs; num++) {
                 int count = 0;
                 int foundRow = -1;
 
-                for (int row = 0; row < 9; row++) {
+                for (int row = 0; row < gs; row++) {
                     if (board[row][col] == 0) {
                         List<Integer> possible = getPossibleNumbers(board, row, col);
                         if (possible.contains(num)) {
@@ -78,15 +82,15 @@ public class SmartHintGenerator {
             }
         }
 
-        for (int boxRow = 0; boxRow < 9; boxRow += 3) {
-            for (int boxCol = 0; boxCol < 9; boxCol += 3) {
-                for (int num = 1; num <= 9; num++) {
+        for (int boxRow = 0; boxRow < gs; boxRow += boxStride) {
+            for (int boxCol = 0; boxCol < gs; boxCol += boxStride) {
+                for (int num = 1; num <= gs; num++) {
                     int count = 0;
                     int foundRow = -1;
                     int foundCol = -1;
 
-                    for (int row = boxRow; row < boxRow + 3; row++) {
-                        for (int col = boxCol; col < boxCol + 3; col++) {
+                    for (int row = boxRow; row < boxRow + boxStride; row++) {
+                        for (int col = boxCol; col < boxCol + boxStride; col++) {
                             if (board[row][col] == 0) {
                                 List<Integer> possible = getPossibleNumbers(board, row, col);
                                 if (possible.contains(num)) {
@@ -99,7 +103,7 @@ public class SmartHintGenerator {
                     }
 
                     if (count == 1) {
-                        int boxNumber = ((boxRow / 3) * 3) + (boxCol / 3) + 1;
+                        int boxNumber = ((boxRow / boxStride) * boxStride) + (boxCol / boxStride) + 1;
                         return new HintInfo(foundRow, foundCol, num, "Hidden Single",
                                 "Only cell in box " + boxNumber + " that can contain " + num);
                     }
@@ -117,7 +121,7 @@ public class SmartHintGenerator {
             return possible;
         }
 
-        for (int i = 1; i <= 9; i++) {
+        for (int i = 1; i <= GameConstants.GRID_SIZE; i++) {
             if (BoardValidator.isValid(board, row, col, i)) {
                 possible.add(i);
             }

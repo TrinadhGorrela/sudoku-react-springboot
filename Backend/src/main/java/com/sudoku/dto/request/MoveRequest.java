@@ -1,5 +1,7 @@
 package com.sudoku.dto.request;
 
+import com.sudoku.constants.GameConstants;
+
 public class MoveRequest {
 
     private int row;
@@ -7,18 +9,20 @@ public class MoveRequest {
     private int value;
 
     public boolean isValid() {
-        return row >= 0 && row <= 8 &&
-                col >= 0 && col <= 8 &&
-                value >= 1 && value <= 9;
+        int max = GameConstants.GRID_SIZE - 1;
+        return row >= 0 && row <= max &&
+                col >= 0 && col <= max &&
+                value >= 1 && value <= GameConstants.GRID_SIZE;
     }
 
     public String getValidationError() {
-        if (row < 0 || row > 8)
-            return "Row must be between 0 and 8";
-        if (col < 0 || col > 8)
-            return "Column must be between 0 and 8";
-        if (value < 1 || value > 9)
-            return "Value must be between 1 and 9";
+        int max = GameConstants.GRID_SIZE - 1;
+        if (row < 0 || row > max)
+            return "Row must be between 0 and " + max;
+        if (col < 0 || col > max)
+            return "Column must be between 0 and " + max;
+        if (value < 1 || value > GameConstants.GRID_SIZE)
+            return "Value must be between 1 and " + GameConstants.GRID_SIZE;
         return null;
     }
 
